@@ -8,7 +8,7 @@ import java.io.IOException;
 import java.net.URI;
 
 public class MoneyExchangeApp {
-    private static final String BASE_URI = "http://localhost:8080/";
+    public static final String BASE_URI = "http://localhost:8080/";
 
     public static void main(String[] args) throws IOException {
 
@@ -21,7 +21,7 @@ public class MoneyExchangeApp {
         server.shutdownNow();
     }
 
-    private static HttpServer startServer() {
+    public static HttpServer startServer() {
         final ResourceConfig rc = new ResourceConfig().packages("com.github.shimopus.revolutmoneyexchange.controller");
         return GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), rc);
     }

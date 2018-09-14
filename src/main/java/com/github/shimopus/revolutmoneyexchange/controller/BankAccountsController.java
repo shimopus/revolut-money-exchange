@@ -17,6 +17,7 @@ import java.util.Collection;
 @Produces(MediaType.APPLICATION_JSON)
 public class BankAccountsController {
     public static final String BASE_URL = "/bankAccounts";
+    public static final String GET_BANK_ACCOUNT_BY_ID_PATH = "{id}";
 
     /**
      *
@@ -44,7 +45,7 @@ public class BankAccountsController {
      * @return
      */
     @GET
-    @Path("{id}")
+    @Path(GET_BANK_ACCOUNT_BY_ID_PATH)
     public Response getBankAccountById(@PathParam("id") Long id) {
         BankAccount bankAccount = null;
 

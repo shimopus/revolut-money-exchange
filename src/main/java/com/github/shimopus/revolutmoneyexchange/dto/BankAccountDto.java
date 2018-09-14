@@ -19,6 +19,10 @@ public class BankAccountDto {
     private static final String BANK_ACCOUNT_BLOCKED_AMOUNT_ROW = "blocked_amount";
     private static final String BANK_ACCOUNT_CURRENCY_ID_ROW = "currency_id";
 
+    public static final Long SERGEY_BABINSKIY_BANK_ACCOUNT_ID = 1L;
+    public static final Long NIKOLAY_STORONSKY_BANK_ACCOUNT_ID = 2L;
+    public static final Long VLAD_YATSENKO_BANK_ACCOUNT_ID = 3L;
+
     private final Logger log = LoggerFactory.getLogger(BankAccountDto.class);
 
     private static final BankAccountDto bas = new BankAccountDto();

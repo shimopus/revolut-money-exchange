@@ -2,11 +2,15 @@ package com.github.shimopus.revolutmoneyexchange.db;
 
 import com.github.shimopus.revolutmoneyexchange.exceptions.ImpossibleOperationExecution;
 import com.zaxxer.hikari.HikariDataSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 
 public class H2DataSource {
+    private static final Logger log = LoggerFactory.getLogger(H2DataSource.class);
+
     private static final HikariDataSource ds;
 
     static {
@@ -16,7 +20,7 @@ public class H2DataSource {
         ds.setPassword("sa");
         ds.setAutoCommit(false);
 
-        System.out.println("The database has been initialized");
+        log.info("The database has been initialized");
     }
 
     private H2DataSource() {}
