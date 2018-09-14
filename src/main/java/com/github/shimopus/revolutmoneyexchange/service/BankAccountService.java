@@ -1,9 +1,9 @@
 package com.github.shimopus.revolutmoneyexchange.service;
 
 import com.github.shimopus.revolutmoneyexchange.dto.BankAccountDto;
+import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
 import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
 
-import java.sql.SQLException;
 import java.util.Collection;
 
 public class BankAccountService {
@@ -19,5 +19,13 @@ public class BankAccountService {
 
     public BankAccount getBankAccountById(Long id) {
         return BankAccountDto.getInstance().getBankAccountById(id);
+    }
+
+    public void updateBankAccount(BankAccount bankAccount) throws ObjectModificationException {
+        BankAccountDto.getInstance().updateBankAccount(bankAccount);
+    }
+
+    public BankAccount createBankAccount(BankAccount bankAccount) throws ObjectModificationException {
+        return BankAccountDto.getInstance().createBankAccount(bankAccount);
     }
 }

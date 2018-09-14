@@ -15,7 +15,9 @@ public class H2DataSource {
 
     static {
         ds = new HikariDataSource();
-        ds.setJdbcUrl("jdbc:h2:mem:test;INIT=RUNSCRIPT FROM 'classpath:db_schema/schema.sql'\\;RUNSCRIPT FROM 'classpath:db_schema/init_data.sql'");
+        ds.setJdbcUrl("jdbc:h2:mem:test;" +
+                "INIT=RUNSCRIPT FROM 'classpath:db_schema/schema.sql'\\;RUNSCRIPT FROM 'classpath:db_schema/init_data.sql';" +
+                "TRACE_LEVEL_FILE=4");
         ds.setUsername("sa");
         ds.setPassword("sa");
         ds.setAutoCommit(false);

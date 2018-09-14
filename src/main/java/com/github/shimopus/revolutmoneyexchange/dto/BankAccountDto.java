@@ -1,6 +1,7 @@
 package com.github.shimopus.revolutmoneyexchange.dto;
 
 import com.github.shimopus.revolutmoneyexchange.db.DbUtils;
+import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
 import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
 import com.github.shimopus.revolutmoneyexchange.model.Currency;
 import org.slf4j.Logger;
@@ -53,20 +54,89 @@ public class BankAccountDto {
     public BankAccount getBankAccountById(Long id) {
         String GET_BANK_ACCOUNT_BY_ID_SQL =
                 "select * from " + BANK_ACCOUNT_TABLE_NAME + " ba " +
-                        "where " +
-                        "ba.id = ?";
+                        "where ba." + BANK_ACCOUNT_ID_ROW + " = ?";
 
         return DbUtils.executeQuery(GET_BANK_ACCOUNT_BY_ID_SQL, getBankAccount -> {
             getBankAccount.setLong(1, id);
             ResultSet bankAccountRS = getBankAccount.executeQuery();
 
-            if (bankAccountRS != null) {
-                bankAccountRS.first();
+            if (bankAccountRS != null && bankAccountRS.first()) {
                 return extractBankAccountFromResultSet(bankAccountRS);
             }
 
             return null;
         }).getResult();
+    }
+
+    public void updateBankAccount(BankAccount bankAccount) throws ObjectModificationException {
+        String UPDATE_BANK_ACCOUNT_SQL =
+                "update " + BANK_ACCOUNT_TABLE_NAME +
+                        " set " +
+                        BANK_ACCOUNT_OWNER_NAME_ROW + " = ?, " +
+                        BANK_ACCOUNT_BALANCE_ROW + " = ?, " +
+                        BANK_ACCOUNT_BLOCKED_AMOUNT_ROW + " = ?, " +
+                        BANK_ACCOUNT_CURRENCY_ID_ROW + " = ? " +
+                        "where " + BANK_ACCOUNT_ID_ROW + " = ?";
+
+        verify(bankAccount);
+
+        int result = DbUtils.executeQuery(UPDATE_BANK_ACCOUNT_SQL, updateBankAccount -> {
+            updateBankAccount.setString(1, bankAccount.getOwnerName());
+            updateBankAccount.setBigDecimal(2, bankAccount.getBalance());
+            updateBankAccount.setBigDecimal(3, bankAccount.getBlockedAmount());
+            updateBankAccount.setLong(4, bankAccount.getCurrency().getId());
+            updateBankAccount.setLong(5, bankAccount.getId());
+
+            return updateBankAccount.executeUpdate();
+        }).getResult();
+
+
+        if (result == 0) {
+            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_NOT_FOUND);
+        }
+    }
+
+    public BankAccount createBankAccount(BankAccount bankAccount) throws ObjectModificationException {
+        String INSERT_BANK_ACCOUNT_SQL =
+                "insert into " + BANK_ACCOUNT_TABLE_NAME +
+                        " (" +
+                            BANK_ACCOUNT_OWNER_NAME_ROW + ", " +
+                            BANK_ACCOUNT_BALANCE_ROW + ", " +
+                            BANK_ACCOUNT_BLOCKED_AMOUNT_ROW + ", " +
+                            BANK_ACCOUNT_CURRENCY_ID_ROW +
+                        ") values (?, ?, ?, ?)";
+
+        verify(bankAccount);
+
+        Long obtainedId = DbUtils.executeQuery(INSERT_BANK_ACCOUNT_SQL, insertBankAccount -> {
+            insertBankAccount.setString(1, bankAccount.getOwnerName());
+            insertBankAccount.setBigDecimal(2, bankAccount.getBalance());
+            insertBankAccount.setBigDecimal(3, bankAccount.getBlockedAmount());
+            insertBankAccount.setLong(4, bankAccount.getCurrency().getId());
+
+            int res = insertBankAccount.executeUpdate();
+
+            if (res == 0) {
+                return null;
+            }
+
+            try (ResultSet generatedKeys = insertBankAccount.getGeneratedKeys()) {
+                if (generatedKeys.next()) {
+                    return generatedKeys.getLong(1);
+                }
+                else {
+                    return null;
+                }
+            }
+        }).getResult();
+
+        if (obtainedId == null) {
+            throw new ObjectModificationException(ObjectModificationException.Type.COULD_NOT_OBTAIN_ID);
+        }
+
+        bankAccount.setId(obtainedId);
+
+        return bankAccount;
     }
 
     private BankAccount extractBankAccountFromResultSet(ResultSet bankAccountsRS) throws SQLException {
@@ -78,5 +148,17 @@ public class BankAccountDto {
         bankAccount.setCurrency(Currency.valueOf(bankAccountsRS.getInt(BANK_ACCOUNT_CURRENCY_ID_ROW)));
 
         return bankAccount;
+    }
+
+    private void verify(BankAccount bankAccount) throws ObjectModificationException {
+        if (bankAccount.getId() == null) {
+            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
+                    "ID value is invalid");
+        }
+
+        if (bankAccount.getOwnerName() == null || bankAccount.getBalance() == null ||
+                bankAccount.getBlockedAmount() == null || bankAccount.getCurrency() == null) {
+            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED, "Fields could not be NULL");
+        }
     }
 }

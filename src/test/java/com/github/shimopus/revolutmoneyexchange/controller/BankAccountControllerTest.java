@@ -3,11 +3,13 @@ package com.github.shimopus.revolutmoneyexchange.controller;
 import com.github.shimopus.revolutmoneyexchange.MoneyExchangeApp;
 import com.github.shimopus.revolutmoneyexchange.dto.BankAccountDto;
 import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
+import com.github.shimopus.revolutmoneyexchange.model.Currency;
+import com.github.shimopus.revolutmoneyexchange.service.BankAccountService;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.junit.AfterClass;
-import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.hamcrest.Matchers;
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -17,9 +19,11 @@ import javax.ws.rs.core.GenericType;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.Random;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 public class BankAccountControllerTest {
     private static HttpServer server;
@@ -40,6 +44,9 @@ public class BankAccountControllerTest {
         server.shutdownNow();
     }
 
+    /**
+     * Tests that all bank accounts will be returned from the database
+     */
     @Test
     public void testGetAllBankAccounts() {
         Response response = target.path(BankAccountsController.BASE_URL)
@@ -52,18 +59,117 @@ public class BankAccountControllerTest {
         assertEquals(bankAccount.size(), BankAccountDto.getInstance().getAllBankAccounts().size());
     }
 
+    /**
+     * Tests that particular bank account will be returned from the database
+     */
     @Test
     public void testGetBankAccountById() {
         Response response = getById(BankAccountDto.SERGEY_BABINSKIY_BANK_ACCOUNT_ID);
 
-        Assert.assertEquals(Response.Status.OK, response.getStatusInfo().toEnum());
+        assertEquals(Response.Status.OK, response.getStatusInfo().toEnum());
+
+        BankAccount bankAccount = response.readEntity(BankAccount.class);
+
+        assertEquals(bankAccount.getId(), BankAccountDto.SERGEY_BABINSKIY_BANK_ACCOUNT_ID);
     }
 
+    /**
+     * Tests that method responds correctly if ID will be passed incorrectly (non int)
+     */
     @Test
     public void testGetNullBankAccount() {
         Response response = getById(null);
 
-        Assert.assertEquals(Response.Status.NOT_FOUND, response.getStatusInfo().toEnum());
+        assertEquals(Response.Status.NOT_FOUND, response.getStatusInfo().toEnum());
+    }
+
+    /**
+     * Tests that non existing bank account will be returned correctly
+     */
+    @Test
+    public void testNonExistingBankAccountById() {
+        Response response = getById(new Random().nextLong());
+
+        assertEquals(Response.Status.NOT_FOUND, response.getStatusInfo().toEnum());
+    }
+
+    /**
+     * Tests the successful update of the bank account
+     */
+    @Test
+    public void testUpdateBankAccount() {
+        BankAccountService bankAccountService = BankAccountService.getInstance();
+        BigDecimal BLOCKED_AMOUNT = new BigDecimal(23);
+
+        BankAccount secondAccount = bankAccountService.getBankAccountById(BankAccountDto.NIKOLAY_STORONSKY_BANK_ACCOUNT_ID);
+        secondAccount.setBlockedAmount(BLOCKED_AMOUNT);
+
+        Response response = target.path(BankAccountsController.BASE_URL)
+                .request()
+                .put(from(secondAccount));
+
+        assertEquals(Response.Status.OK, response.getStatusInfo().toEnum());
+
+        BankAccount updatedAccount = bankAccountService.getBankAccountById(BankAccountDto.NIKOLAY_STORONSKY_BANK_ACCOUNT_ID);
+
+        assertThat(BLOCKED_AMOUNT, Matchers.comparesEqualTo(updatedAccount.getBlockedAmount()));
+    }
+
+    /**
+     * Tests the unsuccessful update of the bank account with non-existing id
+     */
+    @Test
+    public void testUpdateNonExistingBankAccount() {
+        BankAccount bankAccount = new BankAccount(new Random().nextLong(),
+                "", BigDecimal.ZERO, BigDecimal.ZERO, Currency.RUB);
+
+        Response response = target.path(BankAccountsController.BASE_URL)
+                .request()
+                .put(from(bankAccount));
+
+        assertEquals(Response.Status.NOT_FOUND, response.getStatusInfo().toEnum());
+    }
+
+    /**
+     * Tests the unsuccessful update of the incorrect bank account
+     */
+    @Test
+    public void testIncorrectUpdateBankAccount() {
+        BankAccount bankAccount = new BankAccount();
+        bankAccount.setId(new Random().nextLong());
+
+        Response response = target.path(BankAccountsController.BASE_URL)
+                .request()
+                .put(from(bankAccount));
+
+        assertEquals(Response.Status.INTERNAL_SERVER_ERROR, response.getStatusInfo().toEnum());
+    }
+
+    /**
+     * Tests the successful creation of the new bank account
+     */
+    @Test
+    public void testCreateBankAccount() {
+        BankAccountService bankAccountService = BankAccountService.getInstance();
+        String OWNER_NAME = "Sergio";
+
+        BankAccount bankAccount = new BankAccount(OWNER_NAME, BigDecimal.ZERO, BigDecimal.ZERO, Currency.RUB);
+
+        Response response = target.path(BankAccountsController.BASE_URL)
+                .request()
+                .post(from(bankAccount));
+
+        assertEquals(Response.Status.OK, response.getStatusInfo().toEnum());
+
+        BankAccount returnedAccount = response.readEntity(BankAccount.class);
+        BankAccount createdAccount = bankAccountService.getBankAccountById(returnedAccount.getId());
+
+        assertNotNull(returnedAccount);
+        assertNotNull(createdAccount);
+
+        assertNotEquals(returnedAccount.getId(), bankAccount.getId());
+        assertEquals(returnedAccount.getId(), createdAccount.getId());
+        assertEquals(OWNER_NAME, createdAccount.getOwnerName());
     }
 
     private Response getById(Long id) {

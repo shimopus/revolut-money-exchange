@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.Statement;
 
 /**
  * Utilities class contains a number of methods to manipulate with the data base
@@ -43,7 +44,7 @@ public class DbUtils {
 
         try {
             con = H2DataSource.getConnection();
-            preparedStatement = con.prepareStatement(query);
+            preparedStatement = con.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 
             QueryResult<E> qr = new QueryResult<>(queryExecutor.execute(preparedStatement));
 
@@ -58,6 +59,7 @@ public class DbUtils {
                     log.error("Unexpected exception", e);
                 }
             }
+            log.error("Unexpected exception", th);
             throw new ImpossibleOperationExecution(th);
         } finally {
             if (preparedStatement != null) {

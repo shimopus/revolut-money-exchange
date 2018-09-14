@@ -1,6 +1,7 @@
 package com.github.shimopus.revolutmoneyexchange.model;
 
 import java.math.BigDecimal;
+import java.util.Random;
 
 public class BankAccount {
     private Long id;
@@ -10,6 +11,10 @@ public class BankAccount {
     private Currency currency;
 
     public BankAccount() {
+    }
+
+    public BankAccount(String ownerName, BigDecimal balance, BigDecimal blockedAmount, Currency currency) {
+        this(new Random().nextLong(), ownerName, balance, blockedAmount, currency);
     }
 
     public BankAccount(Long id, String ownerName, BigDecimal balance, BigDecimal blockedAmount, Currency currency) {
