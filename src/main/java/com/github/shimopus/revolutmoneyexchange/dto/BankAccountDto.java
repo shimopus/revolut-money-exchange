@@ -7,6 +7,7 @@ import com.github.shimopus.revolutmoneyexchange.model.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -81,10 +82,7 @@ public class BankAccountDto {
         verify(bankAccount);
 
         int result = DbUtils.executeQuery(UPDATE_BANK_ACCOUNT_SQL, updateBankAccount -> {
-            updateBankAccount.setString(1, bankAccount.getOwnerName());
-            updateBankAccount.setBigDecimal(2, bankAccount.getBalance());
-            updateBankAccount.setBigDecimal(3, bankAccount.getBlockedAmount());
-            updateBankAccount.setLong(4, bankAccount.getCurrency().getId());
+            fillInPreparedStatement(updateBankAccount, bankAccount);
             updateBankAccount.setLong(5, bankAccount.getId());
 
             return updateBankAccount.executeUpdate();
@@ -109,10 +107,7 @@ public class BankAccountDto {
         verify(bankAccount);
 
         Long obtainedId = DbUtils.executeQuery(INSERT_BANK_ACCOUNT_SQL, insertBankAccount -> {
-            insertBankAccount.setString(1, bankAccount.getOwnerName());
-            insertBankAccount.setBigDecimal(2, bankAccount.getBalance());
-            insertBankAccount.setBigDecimal(3, bankAccount.getBlockedAmount());
-            insertBankAccount.setLong(4, bankAccount.getCurrency().getId());
+            fillInPreparedStatement(insertBankAccount, bankAccount);
 
             int res = insertBankAccount.executeUpdate();
 
@@ -160,5 +155,12 @@ public class BankAccountDto {
                 bankAccount.getBlockedAmount() == null || bankAccount.getCurrency() == null) {
             throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED, "Fields could not be NULL");
         }
+    }
+
+    private void fillInPreparedStatement(PreparedStatement preparedStatement, BankAccount bankAccount) throws SQLException {
+        preparedStatement.setString(1, bankAccount.getOwnerName());
+        preparedStatement.setBigDecimal(2, bankAccount.getBalance());
+        preparedStatement.setBigDecimal(3, bankAccount.getBlockedAmount());
+        preparedStatement.setLong(4, bankAccount.getCurrency().getId());
     }
 }
