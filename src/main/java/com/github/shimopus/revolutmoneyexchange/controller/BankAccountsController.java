@@ -18,7 +18,7 @@ public class BankAccountsController {
     private final Logger log = LoggerFactory.getLogger(BankAccountsController.class);
 
     public static final String BASE_URL = "/bankAccounts";
-    public static final String GET_BANK_ACCOUNT_BY_ID_PATH = "{id}";
+    public static final String GET_BANK_ACCOUNT_BY_ID_PATH = "id";
 
     /**
      *
@@ -46,8 +46,8 @@ public class BankAccountsController {
      * @return
      */
     @GET
-    @Path(GET_BANK_ACCOUNT_BY_ID_PATH)
-    public Response getBankAccountById(@PathParam("id") Long id) {
+    @Path("{" + GET_BANK_ACCOUNT_BY_ID_PATH + "}")
+    public Response getBankAccountById(@PathParam(GET_BANK_ACCOUNT_BY_ID_PATH) Long id) {
         BankAccount bankAccount = null;
 
         try {

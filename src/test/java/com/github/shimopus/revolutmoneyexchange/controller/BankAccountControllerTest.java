@@ -6,10 +6,11 @@ import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
 import com.github.shimopus.revolutmoneyexchange.model.Currency;
 import com.github.shimopus.revolutmoneyexchange.service.BankAccountService;
 import org.glassfish.grizzly.http.server.HttpServer;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
-import org.junit.Test;
 import org.hamcrest.Matchers;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
+import org.testng.annotations.Test;
+
 
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
@@ -23,7 +24,10 @@ import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.Random;
 
-import static org.junit.Assert.*;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertNotNull;
+import static org.testng.Assert.assertNotEquals;
 
 public class BankAccountControllerTest {
     private static HttpServer server;
@@ -173,7 +177,7 @@ public class BankAccountControllerTest {
     }
 
     private Response getById(Long id) {
-        return target.path(BankAccountsController.BASE_URL + "/" + BankAccountsController.GET_BANK_ACCOUNT_BY_ID_PATH)
+        return target.path(BankAccountsController.BASE_URL + "/{" + BankAccountsController.GET_BANK_ACCOUNT_BY_ID_PATH + "}")
                 .resolveTemplate("id", id == null ? "null" : id)
                 .request().get();
     }
