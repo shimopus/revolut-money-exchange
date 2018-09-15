@@ -1,4 +1,4 @@
-package com.github.shimopus.revolutmoneyexchange.controller;
+package com.github.shimopus.revolutmoneyexchange.controller.service;
 
 import com.github.shimopus.revolutmoneyexchange.dto.TransactionDto;
 import com.github.shimopus.revolutmoneyexchange.model.Transaction;
@@ -14,11 +14,11 @@ import static org.testng.Assert.*;
 import static org.testng.AssertJUnit.assertArrayEquals;
 
 public class TransactionsServiceTest {
-    private TransactionsService transactionsService = TransactionsService.getInstance();
 
     @Test
     public void testAllTransactionsRetrieval(){
         TransactionDto transactionDto = mock(TransactionDto.class);
+        TransactionsService transactionsService = new TransactionsService(transactionDto);
 
         Collection<Transaction> testList = new ArrayList<>(Arrays.asList(
                 new Transaction(),
@@ -30,6 +30,6 @@ public class TransactionsServiceTest {
         Collection<Transaction> transactions = transactionsService.getAllTransactions();
 
         assertNotNull(transactions);
-        assertArrayEquals(transactions.toArray(), testList.toArray());
+        assertArrayEquals(testList.toArray(), transactions.toArray());
     }
 }

@@ -1,13 +1,22 @@
 package com.github.shimopus.revolutmoneyexchange.service;
 
+import com.github.shimopus.revolutmoneyexchange.dto.TransactionDto;
 import com.github.shimopus.revolutmoneyexchange.model.Transaction;
 
 import java.util.Collection;
 
 public class TransactionsService {
     private static final TransactionsService ts = new TransactionsService();
+    private TransactionDto transactionDto = TransactionDto.getInstance();
 
     private TransactionsService() {
+    }
+
+    /**
+     * Constructor made just for testing purpose
+     */
+    public TransactionsService(TransactionDto transactionDto) {
+        this.transactionDto = transactionDto;
     }
 
     public static TransactionsService getInstance() {
@@ -15,7 +24,7 @@ public class TransactionsService {
     }
 
     public Collection<Transaction> getAllTransactions() {
-        return null;
+        return transactionDto.getAllTransactions();
     }
 
     /**

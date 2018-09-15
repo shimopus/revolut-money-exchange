@@ -1,6 +1,7 @@
-package com.github.shimopus.revolutmoneyexchange.controller;
+package com.github.shimopus.revolutmoneyexchange.controller.integration;
 
 import com.github.shimopus.revolutmoneyexchange.MoneyExchangeApp;
+import com.github.shimopus.revolutmoneyexchange.controller.BankAccountsController;
 import com.github.shimopus.revolutmoneyexchange.dto.BankAccountDto;
 import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
 import com.github.shimopus.revolutmoneyexchange.model.Currency;
