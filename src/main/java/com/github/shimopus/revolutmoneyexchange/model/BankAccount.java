@@ -1,9 +1,10 @@
 package com.github.shimopus.revolutmoneyexchange.model;
 
 import java.math.BigDecimal;
+import java.util.Objects;
 import java.util.Random;
 
-public class BankAccount {
+public class BankAccount implements ModelHasId {
     private Long id;
     private String ownerName;
     private BigDecimal balance;
@@ -63,5 +64,18 @@ public class BankAccount {
 
     public void setCurrency(Currency currency) {
         this.currency = currency;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BankAccount that = (BankAccount) o;
+        return Objects.equals(getId(), that.getId());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getId());
     }
 }

@@ -1,6 +1,10 @@
 package com.github.shimopus.revolutmoneyexchange.controller;
 
+import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
 import com.github.shimopus.revolutmoneyexchange.model.Transaction;
+import com.github.shimopus.revolutmoneyexchange.service.TransactionsService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
@@ -14,8 +18,12 @@ import javax.ws.rs.core.Response;
 @Path(TransactionsController.BASE_URL)
 @Produces(MediaType.APPLICATION_JSON)
 public class TransactionsController {
+    private final Logger log = LoggerFactory.getLogger(TransactionsController.class);
+
     public static final String BASE_URL = "/transactions";
     public static final String GET_TRANSACTION_BY_ID_PATH = "id";
+
+    private TransactionsService transactionsService = TransactionsService.getInstance();
 
     /**
      * Returns all transactions in the system with there statuses
@@ -48,6 +56,16 @@ public class TransactionsController {
      */
     @POST()
     public Response createTransaction(Transaction transaction) {
-        return Response.ok("Yes, I can work").build();
+        try {
+            transaction = transactionsService.createTransaction(transaction);
+        } catch (ObjectModificationException e) {
+            log.error(e.getMessage(), e);
+            return Response.serverError().entity(e.getMessage()).build();
+        } catch (Throwable e) {
+            log.error(e.getMessage(), e);
+            return Response.serverError().entity("Could not perform operation. Please contact to administrator.").build();
+        }
+
+        return Response.ok().entity(transaction).build();
     }
 }

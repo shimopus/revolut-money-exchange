@@ -7,6 +7,7 @@ import com.github.shimopus.revolutmoneyexchange.model.Currency;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -25,7 +26,7 @@ public class BankAccountDto {
     public static final Long NIKOLAY_STORONSKY_BANK_ACCOUNT_ID = 2L;
     public static final Long VLAD_YATSENKO_BANK_ACCOUNT_ID = 3L;
 
-    private final Logger log = LoggerFactory.getLogger(BankAccountDto.class);
+    private static final Logger log = LoggerFactory.getLogger(BankAccountDto.class);
 
     private static final BankAccountDto bas = new BankAccountDto();
 
@@ -40,11 +41,11 @@ public class BankAccountDto {
         return DbUtils.executeQuery("select * from " + BANK_ACCOUNT_TABLE_NAME, getBankAccounts -> {
             Collection<BankAccount> bankAccounts = new ArrayList<>();
 
-            ResultSet bankAccountsRS = getBankAccounts.executeQuery();
-
-            if (bankAccountsRS != null) {
-                while (bankAccountsRS.next()) {
-                    bankAccounts.add(extractBankAccountFromResultSet(bankAccountsRS));
+            try (ResultSet bankAccountsRS = getBankAccounts.executeQuery()) {
+                if (bankAccountsRS != null) {
+                    while (bankAccountsRS.next()) {
+                        bankAccounts.add(extractBankAccountFromResultSet(bankAccountsRS));
+                    }
                 }
             }
 
@@ -59,10 +60,28 @@ public class BankAccountDto {
 
         return DbUtils.executeQuery(GET_BANK_ACCOUNT_BY_ID_SQL, getBankAccount -> {
             getBankAccount.setLong(1, id);
-            ResultSet bankAccountRS = getBankAccount.executeQuery();
+            try (ResultSet bankAccountRS = getBankAccount.executeQuery()) {
+                if (bankAccountRS != null && bankAccountRS.first()) {
+                    return extractBankAccountFromResultSet(bankAccountRS);
+                }
+            }
 
-            if (bankAccountRS != null && bankAccountRS.first()) {
-                return extractBankAccountFromResultSet(bankAccountRS);
+            return null;
+        }).getResult();
+    }
+
+    public BankAccount getForUpdateBankAccountById(Connection con, Long id) {
+        String GET_BANK_ACCOUNT_BY_ID_SQL =
+                "select * from " + BANK_ACCOUNT_TABLE_NAME + " ba " +
+                        "where ba." + BANK_ACCOUNT_ID_ROW + " = ? " +
+                        "for update";
+
+        return DbUtils.executeQueryInConnection(con, GET_BANK_ACCOUNT_BY_ID_SQL, getBankAccount -> {
+            getBankAccount.setLong(1, id);
+            try (ResultSet bankAccountRS = getBankAccount.executeQuery()) {
+                if (bankAccountRS != null && bankAccountRS.first()) {
+                    return extractBankAccountFromResultSet(bankAccountRS);
+                }
             }
 
             return null;
@@ -70,6 +89,10 @@ public class BankAccountDto {
     }
 
     public void updateBankAccount(BankAccount bankAccount) throws ObjectModificationException {
+        updateBankAccount(bankAccount, null);
+    }
+
+    public void updateBankAccount(BankAccount bankAccount, Connection con) throws ObjectModificationException {
         String UPDATE_BANK_ACCOUNT_SQL =
                 "update " + BANK_ACCOUNT_TABLE_NAME +
                         " set " +
@@ -81,13 +104,19 @@ public class BankAccountDto {
 
         verify(bankAccount);
 
-        int result = DbUtils.executeQuery(UPDATE_BANK_ACCOUNT_SQL, updateBankAccount -> {
+        DbUtils.QueryExecutor<Integer> queryExecutor = updateBankAccount -> {
             fillInPreparedStatement(updateBankAccount, bankAccount);
             updateBankAccount.setLong(5, bankAccount.getId());
 
             return updateBankAccount.executeUpdate();
-        }).getResult();
+        };
 
+        int result;
+        if (con == null) {
+             result = DbUtils.executeQuery(UPDATE_BANK_ACCOUNT_SQL, queryExecutor).getResult();
+        } else {
+            result = DbUtils.executeQueryInConnection(con, UPDATE_BANK_ACCOUNT_SQL, queryExecutor).getResult();
+        }
 
         if (result == 0) {
             throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_NOT_FOUND);
@@ -98,38 +127,20 @@ public class BankAccountDto {
         String INSERT_BANK_ACCOUNT_SQL =
                 "insert into " + BANK_ACCOUNT_TABLE_NAME +
                         " (" +
-                            BANK_ACCOUNT_OWNER_NAME_ROW + ", " +
-                            BANK_ACCOUNT_BALANCE_ROW + ", " +
-                            BANK_ACCOUNT_BLOCKED_AMOUNT_ROW + ", " +
-                            BANK_ACCOUNT_CURRENCY_ID_ROW +
+                        BANK_ACCOUNT_OWNER_NAME_ROW + ", " +
+                        BANK_ACCOUNT_BALANCE_ROW + ", " +
+                        BANK_ACCOUNT_BLOCKED_AMOUNT_ROW + ", " +
+                        BANK_ACCOUNT_CURRENCY_ID_ROW +
                         ") values (?, ?, ?, ?)";
 
         verify(bankAccount);
 
-        Long obtainedId = DbUtils.executeQuery(INSERT_BANK_ACCOUNT_SQL, insertBankAccount -> {
-            fillInPreparedStatement(insertBankAccount, bankAccount);
+        bankAccount = DbUtils.executeQuery(INSERT_BANK_ACCOUNT_SQL,
+                new DbUtils.CreationQueryExecutor<>(bankAccount, BankAccountDto::fillInPreparedStatement)).getResult();
 
-            int res = insertBankAccount.executeUpdate();
-
-            if (res == 0) {
-                return null;
-            }
-
-            try (ResultSet generatedKeys = insertBankAccount.getGeneratedKeys()) {
-                if (generatedKeys.next()) {
-                    return generatedKeys.getLong(1);
-                }
-                else {
-                    return null;
-                }
-            }
-        }).getResult();
-
-        if (obtainedId == null) {
+        if (bankAccount == null) {
             throw new ObjectModificationException(ObjectModificationException.Type.COULD_NOT_OBTAIN_ID);
         }
-
-        bankAccount.setId(obtainedId);
 
         return bankAccount;
     }
@@ -157,10 +168,14 @@ public class BankAccountDto {
         }
     }
 
-    private void fillInPreparedStatement(PreparedStatement preparedStatement, BankAccount bankAccount) throws SQLException {
-        preparedStatement.setString(1, bankAccount.getOwnerName());
-        preparedStatement.setBigDecimal(2, bankAccount.getBalance());
-        preparedStatement.setBigDecimal(3, bankAccount.getBlockedAmount());
-        preparedStatement.setLong(4, bankAccount.getCurrency().getId());
+    private static void fillInPreparedStatement(PreparedStatement preparedStatement, BankAccount bankAccount){
+        try {
+            preparedStatement.setString(1, bankAccount.getOwnerName());
+            preparedStatement.setBigDecimal(2, bankAccount.getBalance());
+            preparedStatement.setBigDecimal(3, bankAccount.getBlockedAmount());
+            preparedStatement.setLong(4, bankAccount.getCurrency().getId());
+        } catch (SQLException e) {
+            log.error("BankAccount prepared statement could not be initialized by values", e);
+        }
     }
 }
