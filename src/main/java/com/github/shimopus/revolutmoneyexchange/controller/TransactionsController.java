@@ -61,9 +61,6 @@ public class TransactionsController {
         } catch (ObjectModificationException e) {
             log.error(e.getMessage(), e);
             return Response.serverError().entity(e.getMessage()).build();
-        } catch (Throwable e) {
-            log.error(e.getMessage(), e);
-            return Response.serverError().entity("Could not perform operation. Please contact to administrator.").build();
         }
 
         return Response.ok().entity(transaction).build();

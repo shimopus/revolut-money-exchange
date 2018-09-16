@@ -22,7 +22,6 @@ public class TransactionsService {
 
     private static final TransactionsService ts = new TransactionsService();
     private TransactionDto transactionDto = TransactionDto.getInstance();
-    private BankAccountDto bankAccountDto = BankAccountDto.getInstance();
 
     private TransactionsService() {
     }
@@ -32,14 +31,6 @@ public class TransactionsService {
      */
     public TransactionsService(TransactionDto transactionDto) {
         this.transactionDto = transactionDto;
-    }
-
-    /**
-     * Constructor made just for testing purpose
-     */
-    public TransactionsService(TransactionDto transactionDto, BankAccountDto bankAccountDto) {
-        this.transactionDto = transactionDto;
-        this.bankAccountDto = bankAccountDto;
     }
 
     public static TransactionsService getInstance() {
@@ -84,38 +75,6 @@ public class TransactionsService {
         if (transaction.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
                     "The amount should be more than 0");
-        }
-
-        BankAccount toBankAccount = bankAccountDto.getBankAccountById(transaction.getToBankAccount().getId());
-        transaction.setToBankAccount(toBankAccount);
-
-        Connection con = H2DataSource.getConnection();
-
-        try {
-            BankAccount fromBankAccount = bankAccountDto.
-                    getForUpdateBankAccountById(con, transaction.getFromBankAccount().getId());
-
-            //Check that from bank account has enough money
-            //TODO MONEY CONVERSION
-            if (fromBankAccount.getBalance().subtract(fromBankAccount.getBlockedAmount())
-                    .compareTo(transaction.getAmount()) <= 0) {
-                throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
-                        "The specified bank account could not transfer this amount of money. " +
-                                "His balance does not have enough money");
-            }
-
-            transaction.setFromBankAccount(fromBankAccount);
-
-            //TODO Money conversion
-            fromBankAccount.setBlockedAmount(fromBankAccount.getBlockedAmount().add(transaction.getAmount()));
-
-            bankAccountDto.updateBankAccount(fromBankAccount, con);
-        } catch (Throwable th) {
-            DbUtils.safeRollback(con);
-            log.error("Unexpected exception", th);
-            throw new ImpossibleOperationExecution(th);
-        } finally {
-            DbUtils.quietlyClose(con);
         }
 
         return transactionDto.createTransaction(transaction);

@@ -1,11 +1,15 @@
 package com.github.shimopus.revolutmoneyexchange.dto;
 
 import com.github.shimopus.revolutmoneyexchange.db.DbUtils;
+import com.github.shimopus.revolutmoneyexchange.db.H2DataSource;
+import com.github.shimopus.revolutmoneyexchange.exceptions.ImpossibleOperationExecution;
 import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
+import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
 import com.github.shimopus.revolutmoneyexchange.model.Transaction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -24,12 +28,13 @@ public class TransactionDto {
     private static final String TRANSACTION_UPDATE_DATE_ROW = "update_date";
     private static final String TRANSACTION_STATUS_ROW = "status_id";
 
-    private static final TransactionDto transDto = new TransactionDto();
+    private static final TransactionDto transactionDto = new TransactionDto();
+    private BankAccountDto bankAccountDto = BankAccountDto.getInstance();
 
     private TransactionDto(){}
 
     public static TransactionDto getInstance() {
-        return transDto;
+        return transactionDto;
     }
 
     public Collection<Transaction> getAllTransactions() {
@@ -51,11 +56,45 @@ public class TransactionDto {
 
         verify(transaction);
 
-        transaction = DbUtils.executeQuery(INSERT_TRANSACTION_SQL,
-                new DbUtils.CreationQueryExecutor<>(transaction, TransactionDto::fillInPreparedStatement)).getResult();
+        BankAccount toBankAccount = bankAccountDto.getBankAccountById(transaction.getToBankAccount().getId());
+        transaction.setToBankAccount(toBankAccount);
 
-        if (transaction == null) {
-            throw new ObjectModificationException(ObjectModificationException.Type.COULD_NOT_OBTAIN_ID);
+        Connection con = H2DataSource.getConnection();
+
+        try {
+            BankAccount fromBankAccount = bankAccountDto.
+                    getForUpdateBankAccountById(con, transaction.getFromBankAccount().getId());
+
+            //Check that from bank account has enough money
+            //TODO MONEY CONVERSION
+            if (fromBankAccount.getBalance().subtract(fromBankAccount.getBlockedAmount())
+                    .compareTo(transaction.getAmount()) <= 0) {
+                throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
+                        "The specified bank account could not transfer this amount of money. " +
+                                "His balance does not have enough money");
+            }
+
+            transaction.setFromBankAccount(fromBankAccount);
+
+            //TODO Money conversion
+            fromBankAccount.setBlockedAmount(fromBankAccount.getBlockedAmount().add(transaction.getAmount()));
+
+            bankAccountDto.updateBankAccount(fromBankAccount, con);
+
+            transaction = DbUtils.executeQueryInConnection(con, INSERT_TRANSACTION_SQL,
+                    new DbUtils.CreationQueryExecutor<>(transaction, TransactionDto::fillInPreparedStatement)).getResult();
+
+            if (transaction == null) {
+                throw new ObjectModificationException(ObjectModificationException.Type.COULD_NOT_OBTAIN_ID);
+            }
+
+            con.commit();
+        } catch (RuntimeException | SQLException e) {
+            DbUtils.safeRollback(con);
+            log.error("Unexpected exception", e);
+            throw new ImpossibleOperationExecution(e);
+        } finally {
+            DbUtils.quietlyClose(con);
         }
 
         return transaction;

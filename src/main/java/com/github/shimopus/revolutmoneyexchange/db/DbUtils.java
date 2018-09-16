@@ -64,6 +64,7 @@ public class DbUtils {
 
     /**
      * The same logic as for the <code>executeQuery</code> method without connection parameter.
+     * The connection will be not committed.
      * The difference is that this method is not responsible to correctly close and rollback provided connection.
      *
      * @param con           the connection which will be used to create a prepared statement
@@ -78,8 +79,6 @@ public class DbUtils {
             preparedStatement = con.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 
             QueryResult<E> qr = new QueryResult<>(queryExecutor.execute(preparedStatement));
-
-            con.commit();
 
             return qr;
         } catch (Throwable th) {
