@@ -30,12 +30,27 @@ public class TransactionDto {
     private static final String TRANSACTION_UPDATE_DATE_ROW = "update_date";
     private static final String TRANSACTION_STATUS_ROW = "status_id";
 
+    public static final String GET_ALL_TRANSACTIONS_SQL = "select * from " + TRANSACTION_TABLE_NAME;
+    public static final String GET_TRANSACTIONS_BY_STATUS_SQL =
+            "select id from " + TRANSACTION_TABLE_NAME + " trans " +
+                    "where trans." + TRANSACTION_STATUS_ROW + " = ?";
+    public static final String GET_TRANSACTIONS_FOR_UPDATE_BY_ID_SQL =
+            "select * from " + TRANSACTION_TABLE_NAME + " trans " +
+                    "where trans." + TRANSACTION_ID_ROW + " = ? " +
+                    "for update";
+
     private static TransactionDto transactionDto;
     private BankAccountDto bankAccountDto = BankAccountDto.getInstance();
+    private DbUtils dbUtils = DbUtils.getInstance();
     private MoneyExchangeService moneyExchangeService;
 
     private TransactionDto(MoneyExchangeService moneyExchangeService) {
         this.moneyExchangeService = moneyExchangeService;
+    }
+
+    //Just for testing purpose
+    public TransactionDto(DbUtils dbUtils) {
+        this.dbUtils = dbUtils;
     }
 
     public static TransactionDto getInstance(MoneyExchangeService moneyExchangeService) {
@@ -50,7 +65,19 @@ public class TransactionDto {
     }
 
     public Collection<Transaction> getAllTransactions() {
-        return new ArrayList<>();
+        return dbUtils.executeQuery(GET_ALL_TRANSACTIONS_SQL, getAllTransactions -> {
+            Collection<Transaction> transactions = new ArrayList<>();
+
+            try (ResultSet transactionsRS = getAllTransactions.executeQuery()) {
+                if (transactionsRS != null) {
+                    while (transactionsRS.next()) {
+                        transactions.add(extractTransactionFromResultSet(transactionsRS));
+                    }
+                }
+            }
+
+            return transactions;
+        }).getResult();
     }
 
     public Collection<Long> getAllTransactionIdsByStatus(TransactionStatus transactionStatus) {
@@ -58,12 +85,7 @@ public class TransactionDto {
             return null;
         }
 
-        String GET_TRANSACTIONS_BY_STATUS_SQL =
-                "select id from " + TRANSACTION_TABLE_NAME + " trans " +
-                        "where trans." + TRANSACTION_STATUS_ROW + " = ?";
-
-
-        return DbUtils.executeQuery(GET_TRANSACTIONS_BY_STATUS_SQL, getTransactionsByStatus -> {
+        return dbUtils.executeQuery(GET_TRANSACTIONS_BY_STATUS_SQL, getTransactionsByStatus -> {
             Collection<Long> transactionIds = new ArrayList<>();
 
             getTransactionsByStatus.setLong(1, transactionStatus.getId());
@@ -118,7 +140,7 @@ public class TransactionDto {
 
             bankAccountDto.updateBankAccount(fromBankAccount, con);
 
-            transaction = DbUtils.executeQueryInConnection(con, INSERT_TRANSACTION_SQL,
+            transaction = dbUtils.executeQueryInConnection(con, INSERT_TRANSACTION_SQL,
                     new DbUtils.CreationQueryExecutor<>(transaction, TransactionDto::fillInPreparedStatement)).getResult();
 
             if (transaction == null) {
@@ -204,12 +226,7 @@ public class TransactionDto {
     }
 
     private Transaction getForUpdateTransactionById(Long id, Connection con) {
-        String GET_TRANSACTIONS_FOR_UPDATE_BY_ID_SQL =
-                "select * from " + TRANSACTION_TABLE_NAME + " trans " +
-                        "where trans." + TRANSACTION_ID_ROW + " = ? " +
-                        "for update";
-
-        return DbUtils.executeQueryInConnection(con, GET_TRANSACTIONS_FOR_UPDATE_BY_ID_SQL, getTransaction -> {
+        return dbUtils.executeQueryInConnection(con, GET_TRANSACTIONS_FOR_UPDATE_BY_ID_SQL, getTransaction -> {
             getTransaction.setLong(1, id);
             try (ResultSet transactionRS = getTransaction.executeQuery()) {
                 if (transactionRS != null && transactionRS.first()) {
@@ -245,9 +262,9 @@ public class TransactionDto {
 
         int result;
         if (con == null) {
-            result = DbUtils.executeQuery(UPDATE_TRANSACTION_SQL, queryExecutor).getResult();
+            result = dbUtils.executeQuery(UPDATE_TRANSACTION_SQL, queryExecutor).getResult();
         } else {
-            result = DbUtils.executeQueryInConnection(con, UPDATE_TRANSACTION_SQL, queryExecutor).getResult();
+            result = dbUtils.executeQueryInConnection(con, UPDATE_TRANSACTION_SQL, queryExecutor).getResult();
         }
 
         if (result == 0) {

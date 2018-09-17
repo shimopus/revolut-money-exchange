@@ -29,6 +29,7 @@ public class BankAccountDto {
     private static final Logger log = LoggerFactory.getLogger(BankAccountDto.class);
 
     private static final BankAccountDto bas = new BankAccountDto();
+    private DbUtils dbUtils = DbUtils.getInstance();
 
     private BankAccountDto() {
     }
@@ -38,7 +39,7 @@ public class BankAccountDto {
     }
 
     public Collection<BankAccount> getAllBankAccounts() {
-        return DbUtils.executeQuery("select * from " + BANK_ACCOUNT_TABLE_NAME, getBankAccounts -> {
+        return dbUtils.executeQuery("select * from " + BANK_ACCOUNT_TABLE_NAME, getBankAccounts -> {
             Collection<BankAccount> bankAccounts = new ArrayList<>();
 
             try (ResultSet bankAccountsRS = getBankAccounts.executeQuery()) {
@@ -58,7 +59,7 @@ public class BankAccountDto {
                 "select * from " + BANK_ACCOUNT_TABLE_NAME + " ba " +
                         "where ba." + BANK_ACCOUNT_ID_ROW + " = ?";
 
-        return DbUtils.executeQuery(GET_BANK_ACCOUNT_BY_ID_SQL, getBankAccount -> {
+        return dbUtils.executeQuery(GET_BANK_ACCOUNT_BY_ID_SQL, getBankAccount -> {
             getBankAccount.setLong(1, id);
             try (ResultSet bankAccountRS = getBankAccount.executeQuery()) {
                 if (bankAccountRS != null && bankAccountRS.first()) {
@@ -76,7 +77,7 @@ public class BankAccountDto {
                         "where ba." + BANK_ACCOUNT_ID_ROW + " = ? " +
                         "for update";
 
-        return DbUtils.executeQueryInConnection(con, GET_BANK_ACCOUNT_BY_ID_SQL, getBankAccount -> {
+        return dbUtils.executeQueryInConnection(con, GET_BANK_ACCOUNT_BY_ID_SQL, getBankAccount -> {
             getBankAccount.setLong(1, id);
             try (ResultSet bankAccountRS = getBankAccount.executeQuery()) {
                 if (bankAccountRS != null && bankAccountRS.first()) {
@@ -113,9 +114,9 @@ public class BankAccountDto {
 
         int result;
         if (con == null) {
-             result = DbUtils.executeQuery(UPDATE_BANK_ACCOUNT_SQL, queryExecutor).getResult();
+             result = dbUtils.executeQuery(UPDATE_BANK_ACCOUNT_SQL, queryExecutor).getResult();
         } else {
-            result = DbUtils.executeQueryInConnection(con, UPDATE_BANK_ACCOUNT_SQL, queryExecutor).getResult();
+            result = dbUtils.executeQueryInConnection(con, UPDATE_BANK_ACCOUNT_SQL, queryExecutor).getResult();
         }
 
         if (result == 0) {
@@ -135,7 +136,7 @@ public class BankAccountDto {
 
         verify(bankAccount);
 
-        bankAccount = DbUtils.executeQuery(INSERT_BANK_ACCOUNT_SQL,
+        bankAccount = dbUtils.executeQuery(INSERT_BANK_ACCOUNT_SQL,
                 new DbUtils.CreationQueryExecutor<>(bankAccount, BankAccountDto::fillInPreparedStatement)).getResult();
 
         if (bankAccount == null) {

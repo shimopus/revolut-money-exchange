@@ -30,7 +30,7 @@ public class TransactionsServiceTest {
         TransactionDto transactionDto = mock(TransactionDto.class);
         TransactionsService transactionsService = new TransactionsService(transactionDto);
 
-        Collection<Transaction> testList = new ArrayList<>(Arrays.asList(
+        Collection<Transaction> testList = Arrays.asList(
                 new Transaction(
                         BankAccountDto.SERGEY_BABINSKIY_BANK_ACCOUNT_ID,
                         BankAccountDto.NIKOLAY_STORONSKY_BANK_ACCOUNT_ID,
@@ -41,7 +41,7 @@ public class TransactionsServiceTest {
                         BankAccountDto.VLAD_YATSENKO_BANK_ACCOUNT_ID,
                         BigDecimal.ZERO,
                         Currency.EUR)
-        ));
+        );
 
         when(transactionDto.getAllTransactions()).thenReturn(testList);
 

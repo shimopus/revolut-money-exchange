@@ -16,6 +16,15 @@ import java.util.function.BiConsumer;
 public class DbUtils {
     private static final Logger log = LoggerFactory.getLogger(DbUtils.class);
 
+    private static final DbUtils dbUtils = new DbUtils();
+
+    private DbUtils() {
+    }
+
+    public static DbUtils getInstance() {
+        return dbUtils;
+    }
+
     /**
      * The method executes the query passed into the method with the execute method provided
      * This method responds to handle work with the connection, transaction and prepared statement life cycles
@@ -34,9 +43,10 @@ public class DbUtils {
      *
      * @param query         the query string which will be passed into <code>Connection.preparedStatement</code> method
      * @param queryExecutor the executor with only one method accepting <code>PreparedStatement</code> instance created
+     *
      * @return query result object with the only method <code>getResult</code> returns the result of queryExecutor
      */
-    public static <E> QueryResult<E> executeQuery(String query, QueryExecutor<E> queryExecutor) {
+    public <E> QueryResult<E> executeQuery(String query, QueryExecutor<E> queryExecutor) {
         Connection con = null;
         PreparedStatement preparedStatement = null;
 
@@ -70,7 +80,7 @@ public class DbUtils {
      * @param queryExecutor the executor with only one method accepting <code>PreparedStatement</code> instance created
      * @return query result object with the only method <code>getResult</code> returns the result of queryExecutor
      */
-    public static <E> QueryResult<E> executeQueryInConnection(Connection con, String query, QueryExecutor<E> queryExecutor) {
+    public <E> QueryResult<E> executeQueryInConnection(Connection con, String query, QueryExecutor<E> queryExecutor) {
         PreparedStatement preparedStatement = null;
 
         try {
@@ -123,7 +133,7 @@ public class DbUtils {
     public static class QueryResult<T> {
         private T result;
 
-        QueryResult(T result) {
+        public QueryResult(T result) {
             this.result = result;
         }
 
