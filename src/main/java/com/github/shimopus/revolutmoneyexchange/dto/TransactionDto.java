@@ -203,7 +203,7 @@ public class TransactionDto {
         }
     }
 
-    public Transaction getForUpdateTransactionById(Long id, Connection con) {
+    private Transaction getForUpdateTransactionById(Long id, Connection con) {
         String GET_TRANSACTIONS_FOR_UPDATE_BY_ID_SQL =
                 "select * from " + TRANSACTION_TABLE_NAME + " trans " +
                         "where trans." + TRANSACTION_ID_ROW + " = ? " +
@@ -221,11 +221,11 @@ public class TransactionDto {
         }).getResult();
     }
 
-    public void updateTransaction(Transaction transaction) throws ObjectModificationException {
+    private void updateTransaction(Transaction transaction) throws ObjectModificationException {
         updateTransaction(transaction, null);
     }
 
-    public void updateTransaction(Transaction transaction, Connection con) throws ObjectModificationException {
+    private void updateTransaction(Transaction transaction, Connection con) throws ObjectModificationException {
         String UPDATE_TRANSACTION_SQL =
                 "update " + TRANSACTION_TABLE_NAME +
                         " set " +
@@ -245,9 +245,9 @@ public class TransactionDto {
 
         int result;
         if (con == null) {
-            result = DbUtils.executeQuery(UPDATE_TRANSACTION_SQL, queryExecutor).getResult();;
+            result = DbUtils.executeQuery(UPDATE_TRANSACTION_SQL, queryExecutor).getResult();
         } else {
-            result = DbUtils.executeQueryInConnection(con, UPDATE_TRANSACTION_SQL, queryExecutor).getResult();;
+            result = DbUtils.executeQueryInConnection(con, UPDATE_TRANSACTION_SQL, queryExecutor).getResult();
         }
 
         if (result == 0) {

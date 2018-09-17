@@ -1,14 +1,12 @@
 package com.github.shimopus.revolutmoneyexchange.db;
 
 import com.github.shimopus.revolutmoneyexchange.exceptions.ImpossibleOperationExecution;
-import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
 import com.github.shimopus.revolutmoneyexchange.model.ModelHasId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.*;
 import java.util.function.BiConsumer;
-import java.util.function.Function;
 
 /**
  * Utilities class contains a number of methods to manipulate with the data base
@@ -78,9 +76,7 @@ public class DbUtils {
         try {
             preparedStatement = con.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 
-            QueryResult<E> qr = new QueryResult<>(queryExecutor.execute(preparedStatement));
-
-            return qr;
+            return new QueryResult<>(queryExecutor.execute(preparedStatement));
         } catch (Throwable th) {
             log.error("Unexpected exception", th);
             throw new ImpossibleOperationExecution(th);
@@ -89,7 +85,7 @@ public class DbUtils {
         }
     }
 
-    public static void quietlyClose(PreparedStatement preparedStatement) {
+    private static void quietlyClose(PreparedStatement preparedStatement) {
         if (preparedStatement != null) {
             try {
                 preparedStatement.close();
@@ -104,16 +100,6 @@ public class DbUtils {
         if (con != null) {
             try {
                 con.close();
-            } catch (SQLException e) {
-                log.error("Unexpected exception", e);
-            }
-        }
-    }
-
-    public static void quietlyClose(ResultSet resultSet) {
-        if (resultSet != null) {
-            try {
-                resultSet.close();
             } catch (SQLException e) {
                 log.error("Unexpected exception", e);
             }
@@ -144,8 +130,6 @@ public class DbUtils {
         public T getResult() {
             return result;
         }
-
-        ;
     }
 
     /**

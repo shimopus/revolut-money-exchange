@@ -23,7 +23,7 @@ public class TransactionsService {
     /**
      * Constructor made just for testing purpose
      */
-    public TransactionsService(TransactionDto transactionDto, MoneyExchangeService moneyExchangeService) {
+    public TransactionsService(TransactionDto transactionDto) {
         this.transactionDto = transactionDto;
         executorService.scheduleAtFixedRate(() ->
                         ts.executeTransactions(),
@@ -35,7 +35,7 @@ public class TransactionsService {
         if(ts == null){
             synchronized (TransactionsService.class) {
                 if(ts == null){
-                    ts = new TransactionsService(TransactionDto.getInstance(moneyExchangeService), moneyExchangeService);
+                    ts = new TransactionsService(TransactionDto.getInstance(moneyExchangeService));
                 }
             }
         }
@@ -48,15 +48,6 @@ public class TransactionsService {
 
     private Collection<Long> getAllTransactionIdsByStatus(TransactionStatus transactionStatus) {
         return transactionDto.getAllTransactionIdsByStatus(transactionStatus);
-    }
-
-    /**
-     * Returns specific transaction by ID
-     *
-     * @return
-     */
-    public Transaction getTransactionById(Long id) {
-        return null;
     }
 
     /**

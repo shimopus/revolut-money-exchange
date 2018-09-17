@@ -27,7 +27,7 @@ public class TransactionsServiceTest {
     @Test
     public void testAllTransactionsRetrieval(){
         TransactionDto transactionDto = mock(TransactionDto.class);
-        TransactionsService transactionsService = new TransactionsService(transactionDto, new ConstantMoneyExchangeService());
+        TransactionsService transactionsService = new TransactionsService(transactionDto);
 
         Collection<Transaction> testList = new ArrayList<>(Arrays.asList(
                 new Transaction(
@@ -108,7 +108,7 @@ public class TransactionsServiceTest {
     public void testCreateTransaction() throws ObjectModificationException {
         TransactionDto transactionDto = mock(TransactionDto.class);
 
-        TransactionsService transactionsService = new TransactionsService(transactionDto, new ConstantMoneyExchangeService());
+        TransactionsService transactionsService = new TransactionsService(transactionDto);
 
         Transaction createdTransaction = transactionsService.createTransaction(
                 new Transaction(

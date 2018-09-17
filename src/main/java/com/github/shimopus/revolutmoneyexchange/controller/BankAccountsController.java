@@ -48,7 +48,7 @@ public class BankAccountsController {
     @GET
     @Path("{" + GET_BANK_ACCOUNT_BY_ID_PATH + "}")
     public Response getBankAccountById(@PathParam(GET_BANK_ACCOUNT_BY_ID_PATH) Long id) {
-        BankAccount bankAccount = null;
+        BankAccount bankAccount;
 
         try {
             bankAccount = BankAccountService.getInstance().getBankAccountById(id);
