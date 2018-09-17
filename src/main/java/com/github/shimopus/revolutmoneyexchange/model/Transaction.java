@@ -21,7 +21,7 @@ public class Transaction implements ModelHasId{
     }
 
     public Transaction(Long fromBankAccountId, Long toBankAccountId, BigDecimal amount, Currency currency) {
-        super();
+        this();
         this.fromBankAccountId = fromBankAccountId;
         this.toBankAccountId = toBankAccountId;
         this.amount = amount;

@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 
 import static org.mockito.Mockito.*;
 import static org.testng.Assert.*;
@@ -104,22 +105,45 @@ public class TransactionsServiceTest {
         ));
     }
 
+    /**
+     * Testing of Transaction creation and execution. Once transaction has been created
+     * the scheduled job will execute it.
+     *
+     * @throws ObjectModificationException
+     */
     @Test
     public void testCreateTransaction() throws ObjectModificationException {
+        Long TRANSACTION_ID = 123L;
+
         TransactionDto transactionDto = mock(TransactionDto.class);
 
-        TransactionsService transactionsService = new TransactionsService(transactionDto);
+        Transaction transaction = new Transaction(
+                BankAccountDto.SERGEY_BABINSKIY_BANK_ACCOUNT_ID,
+                BankAccountDto.NIKOLAY_STORONSKY_BANK_ACCOUNT_ID,
+                BigDecimal.TEN,
+                Currency.RUB
+        );
+        transaction.setId(TRANSACTION_ID);
 
-        Transaction createdTransaction = transactionsService.createTransaction(
-                new Transaction(
-                        BankAccountDto.SERGEY_BABINSKIY_BANK_ACCOUNT_ID,
-                        BankAccountDto.NIKOLAY_STORONSKY_BANK_ACCOUNT_ID,
-                        BigDecimal.TEN,
-                        Currency.RUB
-                        )
+        when(transactionDto.createTransaction(any())).thenReturn(transaction);
+
+        when(transactionDto.getAllTransactionIdsByStatus(any())).thenReturn(
+                Collections.singletonList(transaction.getId())
         );
 
-        assertNotNull(createdTransaction);
+        doAnswer(invocation -> {
+            transaction.setStatus(TransactionStatus.SUCCEED);
+            return null;
+        }).when(transactionDto).executeTransaction(anyLong());
+
+        TransactionsService transactionsService = new TransactionsService(transactionDto);
+        Transaction createdTransaction = transactionsService.createTransaction(transaction);
+
+        assertEquals(createdTransaction, transaction);
         assertEquals(createdTransaction.getStatus(), TransactionStatus.PLANNED);
+
+        transactionsService.executeTransactions();
+
+        assertEquals(transaction.getStatus(), TransactionStatus.SUCCEED);
     }
 }

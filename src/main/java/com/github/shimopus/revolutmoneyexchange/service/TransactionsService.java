@@ -80,7 +80,7 @@ public class TransactionsService {
      * Here we are taking all PLANNED transactions and executing them.
      * After execution the transaction status will be changed
      */
-    private void executeTransactions() {
+    public void executeTransactions() {
         log.info("Starting of Transaction executor");
         Collection<Long> plannedTransactionIds = getAllTransactionIdsByStatus(TransactionStatus.PLANNED);
 
