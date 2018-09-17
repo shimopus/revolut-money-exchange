@@ -1,21 +1,14 @@
 package com.github.shimopus.revolutmoneyexchange.service;
 
-import com.github.shimopus.revolutmoneyexchange.db.DbUtils;
-import com.github.shimopus.revolutmoneyexchange.db.H2DataSource;
-import com.github.shimopus.revolutmoneyexchange.dto.BankAccountDto;
 import com.github.shimopus.revolutmoneyexchange.dto.TransactionDto;
-import com.github.shimopus.revolutmoneyexchange.exceptions.ImpossibleOperationExecution;
 import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
-import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
 import com.github.shimopus.revolutmoneyexchange.model.Transaction;
 import com.github.shimopus.revolutmoneyexchange.model.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
-import java.sql.Connection;
 import java.util.Collection;
-import java.util.Comparator;
 
 public class TransactionsService {
     private final Logger log = LoggerFactory.getLogger(TransactionsService.class);
@@ -39,6 +32,10 @@ public class TransactionsService {
 
     public Collection<Transaction> getAllTransactions() {
         return transactionDto.getAllTransactions();
+    }
+
+    public Collection<Transaction> getAllTransactionsBySatus(TransactionStatus transactionStatus) {
+        return transactionDto.getAllTransactionsByStatus(transactionStatus);
     }
 
     /**
@@ -78,5 +75,14 @@ public class TransactionsService {
         }
 
         return transactionDto.createTransaction(transaction);
+    }
+
+    /**
+     * Here we are taking all PLANNED transactions and executing them.
+     * After execution the transaction status will be changed
+     */
+    public void executeTransactions() {
+        //TODO needs to be ended
+        Collection<Transaction> plannedTransactions = getAllTransactions();
     }
 }

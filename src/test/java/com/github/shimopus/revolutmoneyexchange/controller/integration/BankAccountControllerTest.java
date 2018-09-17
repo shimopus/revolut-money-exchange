@@ -35,7 +35,7 @@ public class BankAccountControllerTest {
     private static WebTarget target;
 
     @BeforeClass
-    public static void beforeAll() throws Exception {
+    public static void beforeAll() {
         // start the server
         server = MoneyExchangeApp.startServer();
         // create the client
@@ -45,7 +45,7 @@ public class BankAccountControllerTest {
     }
 
     @AfterClass
-    public static void afterAll() throws Exception {
+    public static void afterAll() {
         server.shutdownNow();
     }
 
@@ -181,11 +181,6 @@ public class BankAccountControllerTest {
         return target.path(BankAccountsController.BASE_URL + "/{" + BankAccountsController.GET_BANK_ACCOUNT_BY_ID_PATH + "}")
                 .resolveTemplate("id", id == null ? "null" : id)
                 .request().get();
-    }
-
-    private Response post(BankAccount bankAccount) {
-        return target.path(BankAccountsController.BASE_URL)
-                .request().post(from(bankAccount));
     }
 
     private static Entity from(BankAccount bankAccount) {

@@ -6,11 +6,13 @@ import com.github.shimopus.revolutmoneyexchange.exceptions.ImpossibleOperationEx
 import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
 import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
 import com.github.shimopus.revolutmoneyexchange.model.Transaction;
+import com.github.shimopus.revolutmoneyexchange.model.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -31,7 +33,8 @@ public class TransactionDto {
     private static final TransactionDto transactionDto = new TransactionDto();
     private BankAccountDto bankAccountDto = BankAccountDto.getInstance();
 
-    private TransactionDto(){}
+    private TransactionDto() {
+    }
 
     public static TransactionDto getInstance() {
         return transactionDto;
@@ -39,6 +42,32 @@ public class TransactionDto {
 
     public Collection<Transaction> getAllTransactions() {
         return new ArrayList<>();
+    }
+
+    public Collection<Transaction> getAllTransactionsByStatus(TransactionStatus transactionStatus) {
+        if (transactionStatus == null) {
+            return null;
+        }
+
+        String GET_TRANSACTIONS_BY_STATUS_SQL =
+                "select * from " + TRANSACTION_TABLE_NAME + " trans " +
+                        "where trans." + TRANSACTION_STATUS_ROW + " = ?";
+
+
+        return DbUtils.executeQuery(GET_TRANSACTIONS_BY_STATUS_SQL, getTransactionsByStatus -> {
+            Collection<Transaction> transactions = new ArrayList<>();
+
+            getTransactionsByStatus.setLong(1, transactionStatus.getId());
+            try (ResultSet transactionsRS = getTransactionsByStatus.executeQuery()) {
+                if (transactionsRS != null) {
+                    while (transactionsRS.next()) {
+                        transactions.add(extractTransactionFromResultSet(transactionsRS));
+                    }
+                }
+            }
+
+            return transactions;
+        }).getResult();
     }
 
     public Transaction createTransaction(Transaction transaction) throws ObjectModificationException {
@@ -123,5 +152,12 @@ public class TransactionDto {
             log.error("Transactions prepared statement could not be initialized by values", e);
         }
 
+    }
+
+    private Transaction extractTransactionFromResultSet(ResultSet transactionsRS) throws SQLException {
+        Transaction transaction = new Transaction();
+        transaction.setId(transactionsRS.getLong(TRANSACTION_ID_ROW));
+        //TODO needs to be ended
+        return transaction;
     }
 }

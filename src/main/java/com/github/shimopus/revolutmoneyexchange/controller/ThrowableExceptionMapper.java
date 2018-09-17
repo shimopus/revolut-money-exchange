@@ -3,6 +3,7 @@ package com.github.shimopus.revolutmoneyexchange.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
@@ -13,6 +14,10 @@ public class ThrowableExceptionMapper implements ExceptionMapper<Throwable> {
 
     @Override
     public Response toResponse(Throwable t) {
+        if (t instanceof WebApplicationException) {
+            return ((WebApplicationException) t).getResponse();
+        }
+
         log.error("Uncaught exception", t);
         return Response.serverError().entity("Your request could not been processed. Please contact" +
                 " to Administrator").build();
