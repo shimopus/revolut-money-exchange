@@ -6,8 +6,8 @@ import java.util.Objects;
 
 public class Transaction implements ModelHasId{
     private Long id;
-    private BankAccount fromBankAccount;
-    private BankAccount toBankAccount;
+    private Long fromBankAccountId;
+    private Long toBankAccountId;
     private BigDecimal amount;
     private Currency currency;
     private Date creationDate;
@@ -20,10 +20,10 @@ public class Transaction implements ModelHasId{
         this.status = TransactionStatus.PLANNED;
     }
 
-    public Transaction(BankAccount fromBankAccount, BankAccount toBankAccount, BigDecimal amount, Currency currency) {
+    public Transaction(Long fromBankAccountId, Long toBankAccountId, BigDecimal amount, Currency currency) {
         super();
-        this.fromBankAccount = fromBankAccount;
-        this.toBankAccount = toBankAccount;
+        this.fromBankAccountId = fromBankAccountId;
+        this.toBankAccountId = toBankAccountId;
         this.amount = amount;
         this.currency = currency;
     }
@@ -36,20 +36,20 @@ public class Transaction implements ModelHasId{
         this.id = id;
     }
 
-    public BankAccount getFromBankAccount() {
-        return fromBankAccount;
+    public Long getFromBankAccountId() {
+        return fromBankAccountId;
     }
 
-    public void setFromBankAccount(BankAccount fromBankAccount) {
-        this.fromBankAccount = fromBankAccount;
+    public void setFromBankAccount(Long fromBankAccountId) {
+        this.fromBankAccountId = fromBankAccountId;
     }
 
-    public BankAccount getToBankAccount() {
-        return toBankAccount;
+    public Long getToBankAccountId() {
+        return toBankAccountId;
     }
 
-    public void setToBankAccount(BankAccount toBankAccount) {
-        this.toBankAccount = toBankAccount;
+    public void setToBankAccount(Long toBankAccountId) {
+        this.toBankAccountId = toBankAccountId;
     }
 
     public BigDecimal getAmount() {

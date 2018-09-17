@@ -57,15 +57,11 @@ public class TransactionsService {
      * @return transaction object with the actual ID
      */
     public Transaction createTransaction(Transaction transaction) throws ObjectModificationException {
-        if (transaction.getFromBankAccount() == null || transaction.getToBankAccount() == null) {
+        if (transaction.getFromBankAccountId() == null || transaction.getToBankAccountId() == null) {
             throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
                     "The transaction has not provided from Bank Account or to Bank Account values");
         }
-        if (transaction.getFromBankAccount().getId() == null || transaction.getToBankAccount().getId() == null) {
-            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
-                    "The transaction has not provided from Bank Account or to Bank Account values");
-        }
-        if (transaction.getFromBankAccount().equals(transaction.getToBankAccount())) {
+        if (transaction.getFromBankAccountId().equals(transaction.getToBankAccountId())) {
             throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
                     "The sender and recipient should not be same");
         }

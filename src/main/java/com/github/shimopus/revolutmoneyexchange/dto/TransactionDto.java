@@ -85,14 +85,11 @@ public class TransactionDto {
 
         verify(transaction);
 
-        BankAccount toBankAccount = bankAccountDto.getBankAccountById(transaction.getToBankAccount().getId());
-        transaction.setToBankAccount(toBankAccount);
-
         Connection con = H2DataSource.getConnection();
 
         try {
             BankAccount fromBankAccount = bankAccountDto.
-                    getForUpdateBankAccountById(con, transaction.getFromBankAccount().getId());
+                    getForUpdateBankAccountById(con, transaction.getFromBankAccountId());
 
             //Check that from bank account has enough money
             //TODO MONEY CONVERSION
@@ -102,8 +99,6 @@ public class TransactionDto {
                         "The specified bank account could not transfer this amount of money. " +
                                 "His balance does not have enough money");
             }
-
-            transaction.setFromBankAccount(fromBankAccount);
 
             //TODO Money conversion
             fromBankAccount.setBlockedAmount(fromBankAccount.getBlockedAmount().add(transaction.getAmount()));
@@ -131,8 +126,8 @@ public class TransactionDto {
     }
 
     private void verify(Transaction transaction) throws ObjectModificationException {
-        if (transaction.getAmount() == null || transaction.getFromBankAccount() == null ||
-                transaction.getToBankAccount() == null || transaction.getCurrency() == null
+        if (transaction.getAmount() == null || transaction.getFromBankAccountId() == null ||
+                transaction.getToBankAccountId() == null || transaction.getCurrency() == null
                 || transaction.getStatus() == null || transaction.getCreationDate() == null
                 || transaction.getUpdateDate() == null) {
             throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED, "Fields could not be NULL");
@@ -141,8 +136,8 @@ public class TransactionDto {
 
     private static void fillInPreparedStatement(PreparedStatement preparedStatement, Transaction transaction) {
         try {
-            preparedStatement.setLong(1, transaction.getFromBankAccount().getId());
-            preparedStatement.setLong(2, transaction.getToBankAccount().getId());
+            preparedStatement.setLong(1, transaction.getFromBankAccountId());
+            preparedStatement.setLong(2, transaction.getToBankAccountId());
             preparedStatement.setBigDecimal(3, transaction.getAmount());
             preparedStatement.setInt(4, transaction.getCurrency().getId());
             preparedStatement.setInt(5, transaction.getStatus().getId());
