@@ -40,7 +40,7 @@ public class Transaction implements ModelHasId{
         return fromBankAccountId;
     }
 
-    public void setFromBankAccount(Long fromBankAccountId) {
+    public void setFromBankAccountId(Long fromBankAccountId) {
         this.fromBankAccountId = fromBankAccountId;
     }
 
@@ -48,7 +48,7 @@ public class Transaction implements ModelHasId{
         return toBankAccountId;
     }
 
-    public void setToBankAccount(Long toBankAccountId) {
+    public void setToBankAccountId(Long toBankAccountId) {
         this.toBankAccountId = toBankAccountId;
     }
 

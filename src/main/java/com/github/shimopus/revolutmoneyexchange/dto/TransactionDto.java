@@ -5,15 +5,14 @@ import com.github.shimopus.revolutmoneyexchange.db.H2DataSource;
 import com.github.shimopus.revolutmoneyexchange.exceptions.ImpossibleOperationExecution;
 import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
 import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
+import com.github.shimopus.revolutmoneyexchange.model.Currency;
 import com.github.shimopus.revolutmoneyexchange.model.Transaction;
 import com.github.shimopus.revolutmoneyexchange.model.TransactionStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.math.BigDecimal;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -44,29 +43,29 @@ public class TransactionDto {
         return new ArrayList<>();
     }
 
-    public Collection<Transaction> getAllTransactionsByStatus(TransactionStatus transactionStatus) {
+    public Collection<Long> getAllTransactionIdsByStatus(TransactionStatus transactionStatus) {
         if (transactionStatus == null) {
             return null;
         }
 
         String GET_TRANSACTIONS_BY_STATUS_SQL =
-                "select * from " + TRANSACTION_TABLE_NAME + " trans " +
+                "select id from " + TRANSACTION_TABLE_NAME + " trans " +
                         "where trans." + TRANSACTION_STATUS_ROW + " = ?";
 
 
         return DbUtils.executeQuery(GET_TRANSACTIONS_BY_STATUS_SQL, getTransactionsByStatus -> {
-            Collection<Transaction> transactions = new ArrayList<>();
+            Collection<Long> transactionIds = new ArrayList<>();
 
             getTransactionsByStatus.setLong(1, transactionStatus.getId());
             try (ResultSet transactionsRS = getTransactionsByStatus.executeQuery()) {
                 if (transactionsRS != null) {
                     while (transactionsRS.next()) {
-                        transactions.add(extractTransactionFromResultSet(transactionsRS));
+                        transactionIds.add(transactionsRS.getLong(TRANSACTION_ID_ROW));
                     }
                 }
             }
 
-            return transactions;
+            return transactionIds;
         }).getResult();
     }
 
@@ -125,6 +124,113 @@ public class TransactionDto {
 
     }
 
+    public void executeTransaction(Long id) throws ObjectModificationException {
+        if (id == null) {
+            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
+                    "The specified transaction doesn't exists");
+        }
+
+        Connection con = H2DataSource.getConnection();
+
+        Transaction transaction = null;
+        try {
+            transaction = getForUpdateTransactionById(id, con);
+
+            BankAccount fromBankAccount = bankAccountDto.
+                    getForUpdateBankAccountById(con, transaction.getFromBankAccountId());
+
+            BankAccount toBankAccount = bankAccountDto.
+                    getForUpdateBankAccountById(con, transaction.getToBankAccountId());
+
+            //TODO Money conversion
+            BigDecimal newBlockedAmount = fromBankAccount.getBlockedAmount().subtract(transaction.getAmount());
+            BigDecimal newBalance = fromBankAccount.getBalance().subtract(transaction.getAmount());
+
+            if (newBlockedAmount.compareTo(BigDecimal.ZERO) < 0 || newBalance.compareTo(BigDecimal.ZERO) < 0) {
+                transaction.setStatus(TransactionStatus.FAILED);
+                //TODO set error message into the transaction
+                updateTransaction(transaction, con);
+            } else {
+                fromBankAccount.setBlockedAmount(newBlockedAmount);
+                fromBankAccount.setBalance(newBalance);
+
+                bankAccountDto.updateBankAccount(fromBankAccount, con);
+
+                toBankAccount.setBalance(toBankAccount.getBalance().add(transaction.getAmount()));
+
+                bankAccountDto.updateBankAccount(toBankAccount, con);
+
+                transaction.setStatus(TransactionStatus.SUCCEED);
+
+                updateTransaction(transaction, con);
+            }
+
+            con.commit();
+        } catch (RuntimeException | SQLException e) {
+            DbUtils.safeRollback(con);
+            if (transaction != null) {
+                transaction.setStatus(TransactionStatus.FAILED);
+                updateTransaction(transaction);
+            }
+            log.error("Unexpected exception", e);
+            throw new ImpossibleOperationExecution(e);
+        } finally {
+            DbUtils.quietlyClose(con);
+        }
+    }
+
+    public Transaction getForUpdateTransactionById(Long id, Connection con) {
+        String GET_TRANSACTIONS_FOR_UPDATE_BY_ID_SQL =
+                "select * from " + TRANSACTION_TABLE_NAME + " trans " +
+                        "where trans." + TRANSACTION_ID_ROW + " = ? " +
+                        "for update";
+
+        return DbUtils.executeQueryInConnection(con, GET_TRANSACTIONS_FOR_UPDATE_BY_ID_SQL, getTransaction -> {
+            getTransaction.setLong(1, id);
+            try (ResultSet transactionRS = getTransaction.executeQuery()) {
+                if (transactionRS != null && transactionRS.first()) {
+                    return extractTransactionFromResultSet(transactionRS);
+                }
+            }
+
+            return null;
+        }).getResult();
+    }
+
+    public void updateTransaction(Transaction transaction) throws ObjectModificationException {
+        updateTransaction(transaction, null);
+    }
+
+    public void updateTransaction(Transaction transaction, Connection con) throws ObjectModificationException {
+        String UPDATE_TRANSACTION_SQL =
+                "update " + TRANSACTION_TABLE_NAME +
+                        " set " +
+                        TRANSACTION_STATUS_ROW + " = ?, " +
+                        TRANSACTION_UPDATE_DATE_ROW + " = ? " +
+                        "where " + TRANSACTION_ID_ROW + " = ?";
+
+        verify(transaction);
+
+        DbUtils.QueryExecutor<Integer> queryExecutor = updateTransaction -> {
+            updateTransaction.setInt(1, transaction.getStatus().getId());
+            updateTransaction.setDate(2, new Date(new java.util.Date().getTime()));
+            updateTransaction.setLong(3, transaction.getId());
+
+            return updateTransaction.executeUpdate();
+        };
+
+        int result;
+        if (con == null) {
+            result = DbUtils.executeQuery(UPDATE_TRANSACTION_SQL, queryExecutor).getResult();;
+        } else {
+            result = DbUtils.executeQueryInConnection(con, UPDATE_TRANSACTION_SQL, queryExecutor).getResult();;
+        }
+
+        if (result == 0) {
+            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_NOT_FOUND);
+        }
+    }
+
     private void verify(Transaction transaction) throws ObjectModificationException {
         if (transaction.getAmount() == null || transaction.getFromBankAccountId() == null ||
                 transaction.getToBankAccountId() == null || transaction.getCurrency() == null
@@ -152,7 +258,13 @@ public class TransactionDto {
     private Transaction extractTransactionFromResultSet(ResultSet transactionsRS) throws SQLException {
         Transaction transaction = new Transaction();
         transaction.setId(transactionsRS.getLong(TRANSACTION_ID_ROW));
-        //TODO needs to be ended
+        transaction.setFromBankAccountId(transactionsRS.getLong(TRANSACTION_FROM_ACCOUNT_ROW));
+        transaction.setToBankAccountId(transactionsRS.getLong(TRANSACTION_TO_ACCOUNT_ROW));
+        transaction.setAmount(transactionsRS.getBigDecimal(TRANSACTION_AMOUNT_ROW));
+        transaction.setCurrency(Currency.valueOf(transactionsRS.getInt(TRANSACTION_CURRENCY_ROW)));
+        transaction.setStatus(TransactionStatus.valueOf(transactionsRS.getInt(TRANSACTION_STATUS_ROW)));
+        transaction.setCreationDate(transactionsRS.getDate(TRANSACTION_CREATION_DATE_ROW));
+        transaction.setUpdateDate(transactionsRS.getDate(TRANSACTION_UPDATE_DATE_ROW));
         return transaction;
     }
 }

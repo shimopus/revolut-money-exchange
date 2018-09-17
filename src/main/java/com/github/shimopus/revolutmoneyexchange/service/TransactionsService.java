@@ -9,6 +9,7 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.Iterator;
 
 public class TransactionsService {
     private final Logger log = LoggerFactory.getLogger(TransactionsService.class);
@@ -34,8 +35,8 @@ public class TransactionsService {
         return transactionDto.getAllTransactions();
     }
 
-    public Collection<Transaction> getAllTransactionsBySatus(TransactionStatus transactionStatus) {
-        return transactionDto.getAllTransactionsByStatus(transactionStatus);
+    public Collection<Long> getAllTransactionIdsByStatus(TransactionStatus transactionStatus) {
+        return transactionDto.getAllTransactionIdsByStatus(transactionStatus);
     }
 
     /**
@@ -70,7 +71,10 @@ public class TransactionsService {
                     "The amount should be more than 0");
         }
 
-        return transactionDto.createTransaction(transaction);
+        transaction = transactionDto.createTransaction(transaction);
+        TransactionExecutorJobService.planToExecute();
+
+        return transaction;
     }
 
     /**
@@ -78,7 +82,16 @@ public class TransactionsService {
      * After execution the transaction status will be changed
      */
     public void executeTransactions() {
-        //TODO needs to be ended
-        Collection<Transaction> plannedTransactions = getAllTransactions();
+        log.info("Starting of Transaction executor");
+        Collection<Long> plannedTransactionIds = getAllTransactionIdsByStatus(TransactionStatus.PLANNED);
+
+        for (Long transactionId : plannedTransactionIds) {
+            try {
+                transactionDto.executeTransaction(transactionId);
+            } catch (ObjectModificationException e) {
+                log.error("Could not execute transaction with id %d", transactionId, e);
+            }
+        }
+        log.info("Transaction executor ended");
     }
 }
