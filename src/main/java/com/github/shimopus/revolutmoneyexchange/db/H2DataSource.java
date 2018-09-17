@@ -20,6 +20,8 @@ public class H2DataSource {
                 "TRACE_LEVEL_FILE=4");
         ds.setUsername("sa");
         ds.setPassword("sa");
+        //We are using frequently manual transaction management in the app. So we don't want to have transaction
+        //commit for each request
         ds.setAutoCommit(false);
 
         log.info("The database has been initialized");

@@ -9,13 +9,23 @@ import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class TransactionsService {
-    private final Logger log = LoggerFactory.getLogger(TransactionsService.class);
+    private static final Logger log = LoggerFactory.getLogger(TransactionsService.class);
 
     private static final TransactionsService ts = new TransactionsService();
     private TransactionDto transactionDto = TransactionDto.getInstance();
+    private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
+
+    static {
+        executorService.scheduleAtFixedRate(() ->
+                TransactionsService.getInstance().executeTransactions(),
+                0, 5, TimeUnit.SECONDS);
+        log.info("Transaction Executor planned");
+    }
 
     private TransactionsService() {
     }
@@ -35,7 +45,7 @@ public class TransactionsService {
         return transactionDto.getAllTransactions();
     }
 
-    public Collection<Long> getAllTransactionIdsByStatus(TransactionStatus transactionStatus) {
+    private Collection<Long> getAllTransactionIdsByStatus(TransactionStatus transactionStatus) {
         return transactionDto.getAllTransactionIdsByStatus(transactionStatus);
     }
 
@@ -71,17 +81,14 @@ public class TransactionsService {
                     "The amount should be more than 0");
         }
 
-        transaction = transactionDto.createTransaction(transaction);
-        TransactionExecutorJobService.planToExecute();
-
-        return transaction;
+        return transactionDto.createTransaction(transaction);
     }
 
     /**
      * Here we are taking all PLANNED transactions and executing them.
      * After execution the transaction status will be changed
      */
-    public void executeTransactions() {
+    private void executeTransactions() {
         log.info("Starting of Transaction executor");
         Collection<Long> plannedTransactionIds = getAllTransactionIdsByStatus(TransactionStatus.PLANNED);
 
