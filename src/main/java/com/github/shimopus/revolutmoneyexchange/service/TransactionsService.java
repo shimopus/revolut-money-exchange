@@ -16,28 +16,29 @@ import java.util.concurrent.TimeUnit;
 public class TransactionsService {
     private static final Logger log = LoggerFactory.getLogger(TransactionsService.class);
 
-    private static final TransactionsService ts = new TransactionsService();
-    private TransactionDto transactionDto = TransactionDto.getInstance();
+    private static TransactionsService ts;
+    private TransactionDto transactionDto;
     private static ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
-
-    static {
-        executorService.scheduleAtFixedRate(() ->
-                TransactionsService.getInstance().executeTransactions(),
-                0, 5, TimeUnit.SECONDS);
-        log.info("Transaction Executor planned");
-    }
-
-    private TransactionsService() {
-    }
 
     /**
      * Constructor made just for testing purpose
      */
-    public TransactionsService(TransactionDto transactionDto) {
+    public TransactionsService(TransactionDto transactionDto, MoneyExchangeService moneyExchangeService) {
         this.transactionDto = transactionDto;
+        executorService.scheduleAtFixedRate(() ->
+                        ts.executeTransactions(),
+                0, 5, TimeUnit.SECONDS);
+        log.info("Transaction Executor planned");
     }
 
-    public static TransactionsService getInstance() {
+    public static TransactionsService getInstance(MoneyExchangeService moneyExchangeService) {
+        if(ts == null){
+            synchronized (TransactionsService.class) {
+                if(ts == null){
+                    ts = new TransactionsService(TransactionDto.getInstance(moneyExchangeService), moneyExchangeService);
+                }
+            }
+        }
         return ts;
     }
 

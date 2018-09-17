@@ -6,6 +6,7 @@ import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationExc
 import com.github.shimopus.revolutmoneyexchange.model.Currency;
 import com.github.shimopus.revolutmoneyexchange.model.Transaction;
 import com.github.shimopus.revolutmoneyexchange.model.TransactionStatus;
+import com.github.shimopus.revolutmoneyexchange.service.ConstantMoneyExchangeService;
 import com.github.shimopus.revolutmoneyexchange.service.TransactionsService;
 import org.testng.annotations.Test;
 
@@ -19,11 +20,14 @@ import static org.testng.Assert.*;
 import static org.testng.AssertJUnit.assertArrayEquals;
 
 public class TransactionsServiceTest {
+    private static final TransactionsService staticTransactionService = TransactionsService.getInstance(
+            new ConstantMoneyExchangeService()
+    );
 
     @Test
     public void testAllTransactionsRetrieval(){
         TransactionDto transactionDto = mock(TransactionDto.class);
-        TransactionsService transactionsService = new TransactionsService(transactionDto);
+        TransactionsService transactionsService = new TransactionsService(transactionDto, new ConstantMoneyExchangeService());
 
         Collection<Transaction> testList = new ArrayList<>(Arrays.asList(
                 new Transaction(
@@ -53,7 +57,7 @@ public class TransactionsServiceTest {
      */
     @Test(expectedExceptions=ObjectModificationException.class)
     public void testCreateTransactionWithNullFrom() throws ObjectModificationException {
-        TransactionsService.getInstance().createTransaction(new Transaction(
+        staticTransactionService.createTransaction(new Transaction(
                 null, 2L, BigDecimal.TEN, Currency.RUB
         ));
     }
@@ -65,7 +69,7 @@ public class TransactionsServiceTest {
      */
     @Test(expectedExceptions=ObjectModificationException.class)
     public void testCreateTransactionWithNullTo() throws ObjectModificationException {
-        TransactionsService.getInstance().createTransaction(new Transaction(
+        staticTransactionService.createTransaction(new Transaction(
                 1L, null, BigDecimal.TEN, Currency.RUB
         ));
     }
@@ -77,7 +81,7 @@ public class TransactionsServiceTest {
      */
     @Test(expectedExceptions=ObjectModificationException.class)
     public void testCreateTransactionWithSameAccounts() throws ObjectModificationException {
-        TransactionsService.getInstance().createTransaction(new Transaction(
+        staticTransactionService.createTransaction(new Transaction(
                 BankAccountDto.SERGEY_BABINSKIY_BANK_ACCOUNT_ID,
                 BankAccountDto.SERGEY_BABINSKIY_BANK_ACCOUNT_ID,
                 BigDecimal.TEN,
@@ -92,7 +96,7 @@ public class TransactionsServiceTest {
      */
     @Test(expectedExceptions=ObjectModificationException.class)
     public void testCreateTransactionWithZeroAmount() throws ObjectModificationException {
-        TransactionsService.getInstance().createTransaction(new Transaction(
+        staticTransactionService.createTransaction(new Transaction(
                 BankAccountDto.SERGEY_BABINSKIY_BANK_ACCOUNT_ID,
                 BankAccountDto.NIKOLAY_STORONSKY_BANK_ACCOUNT_ID,
                 BigDecimal.ZERO,
@@ -104,7 +108,7 @@ public class TransactionsServiceTest {
     public void testCreateTransaction() throws ObjectModificationException {
         TransactionDto transactionDto = mock(TransactionDto.class);
 
-        TransactionsService transactionsService = new TransactionsService(transactionDto);
+        TransactionsService transactionsService = new TransactionsService(transactionDto, new ConstantMoneyExchangeService());
 
         Transaction createdTransaction = transactionsService.createTransaction(
                 new Transaction(

@@ -2,6 +2,7 @@ package com.github.shimopus.revolutmoneyexchange.controller;
 
 import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
 import com.github.shimopus.revolutmoneyexchange.model.Transaction;
+import com.github.shimopus.revolutmoneyexchange.service.ConstantMoneyExchangeService;
 import com.github.shimopus.revolutmoneyexchange.service.TransactionsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,7 @@ public class TransactionsController {
     public static final String BASE_URL = "/transactions";
     public static final String GET_TRANSACTION_BY_ID_PATH = "id";
 
-    private TransactionsService transactionsService = TransactionsService.getInstance();
+    private TransactionsService transactionsService = TransactionsService.getInstance(new ConstantMoneyExchangeService());
 
     /**
      * Returns all transactions in the system with there statuses

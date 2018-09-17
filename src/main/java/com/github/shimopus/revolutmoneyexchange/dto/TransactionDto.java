@@ -8,6 +8,7 @@ import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
 import com.github.shimopus.revolutmoneyexchange.model.Currency;
 import com.github.shimopus.revolutmoneyexchange.model.Transaction;
 import com.github.shimopus.revolutmoneyexchange.model.TransactionStatus;
+import com.github.shimopus.revolutmoneyexchange.service.MoneyExchangeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,13 +30,22 @@ public class TransactionDto {
     private static final String TRANSACTION_UPDATE_DATE_ROW = "update_date";
     private static final String TRANSACTION_STATUS_ROW = "status_id";
 
-    private static final TransactionDto transactionDto = new TransactionDto();
+    private static TransactionDto transactionDto;
     private BankAccountDto bankAccountDto = BankAccountDto.getInstance();
+    private MoneyExchangeService moneyExchangeService;
 
-    private TransactionDto() {
+    private TransactionDto(MoneyExchangeService moneyExchangeService) {
+        this.moneyExchangeService = moneyExchangeService;
     }
 
-    public static TransactionDto getInstance() {
+    public static TransactionDto getInstance(MoneyExchangeService moneyExchangeService) {
+        if(transactionDto == null){
+            synchronized (TransactionDto.class) {
+                if(transactionDto == null){
+                    transactionDto = new TransactionDto(moneyExchangeService);
+                }
+            }
+        }
         return transactionDto;
     }
 
@@ -90,17 +100,21 @@ public class TransactionDto {
             BankAccount fromBankAccount = bankAccountDto.
                     getForUpdateBankAccountById(con, transaction.getFromBankAccountId());
 
+            BigDecimal amountToWithdraw = moneyExchangeService.exchange(
+                    transaction.getAmount(),
+                    transaction.getCurrency(),
+                    fromBankAccount.getCurrency()
+            );
+
             //Check that from bank account has enough money
-            //TODO MONEY CONVERSION
             if (fromBankAccount.getBalance().subtract(fromBankAccount.getBlockedAmount())
-                    .compareTo(transaction.getAmount()) <= 0) {
+                    .compareTo(amountToWithdraw) <= 0) {
                 throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
                         "The specified bank account could not transfer this amount of money. " +
                                 "His balance does not have enough money");
             }
 
-            //TODO Money conversion
-            fromBankAccount.setBlockedAmount(fromBankAccount.getBlockedAmount().add(transaction.getAmount()));
+            fromBankAccount.setBlockedAmount(fromBankAccount.getBlockedAmount().add(amountToWithdraw));
 
             bankAccountDto.updateBankAccount(fromBankAccount, con);
 
@@ -142,9 +156,13 @@ public class TransactionDto {
             BankAccount toBankAccount = bankAccountDto.
                     getForUpdateBankAccountById(con, transaction.getToBankAccountId());
 
-            //TODO Money conversion
-            BigDecimal newBlockedAmount = fromBankAccount.getBlockedAmount().subtract(transaction.getAmount());
-            BigDecimal newBalance = fromBankAccount.getBalance().subtract(transaction.getAmount());
+            BigDecimal amountToWithdraw = moneyExchangeService.exchange(
+                    transaction.getAmount(),
+                    transaction.getCurrency(),
+                    fromBankAccount.getCurrency()
+            );
+            BigDecimal newBlockedAmount = fromBankAccount.getBlockedAmount().subtract(amountToWithdraw);
+            BigDecimal newBalance = fromBankAccount.getBalance().subtract(amountToWithdraw);
 
             if (newBlockedAmount.compareTo(BigDecimal.ZERO) < 0 || newBalance.compareTo(BigDecimal.ZERO) < 0) {
                 transaction.setStatus(TransactionStatus.FAILED);
@@ -156,7 +174,13 @@ public class TransactionDto {
 
                 bankAccountDto.updateBankAccount(fromBankAccount, con);
 
-                toBankAccount.setBalance(toBankAccount.getBalance().add(transaction.getAmount()));
+                BigDecimal amountToTransfer = moneyExchangeService.exchange(
+                        transaction.getAmount(),
+                        transaction.getCurrency(),
+                        toBankAccount.getCurrency()
+                );
+
+                toBankAccount.setBalance(toBankAccount.getBalance().add(amountToTransfer));
 
                 bankAccountDto.updateBankAccount(toBankAccount, con);
 
