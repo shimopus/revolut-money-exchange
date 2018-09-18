@@ -14,10 +14,11 @@ import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class ConcurrentlyTransactionCreation {
+public class ConcurrentlyTransactionCreationAndExecutionTest {
     private TransactionsService transactionsService = TransactionsService.getInstance(new ConstantMoneyExchangeService());
     private BankAccountService bankAccountService = BankAccountService.getInstance();
 
@@ -26,6 +27,7 @@ public class ConcurrentlyTransactionCreation {
     private static final int INVOCATION_COUNT = 100;
 
     private Long newBankAccountId;
+    private AtomicInteger invocationsDone = new AtomicInteger(0);
 
     @BeforeClass
     public void initData() throws ObjectModificationException {
@@ -41,6 +43,8 @@ public class ConcurrentlyTransactionCreation {
 
     @Test(threadPoolSize = 10, invocationCount = INVOCATION_COUNT)
     public void testConcurrentTransactionCreation() throws ObjectModificationException {
+        int currentTestNumber = invocationsDone.addAndGet(1);
+
         Transaction transaction = new Transaction(
                 newBankAccountId,
                 BankAccountDto.NIKOLAY_STORONSKY_BANK_ACCOUNT_ID,
@@ -49,18 +53,23 @@ public class ConcurrentlyTransactionCreation {
         );
 
         transactionsService.createTransaction(transaction);
+
+        if (currentTestNumber % 5 == 0) {
+            transactionsService.executeTransactions();
+        }
     }
 
     @AfterClass
     public void checkResults() {
         BankAccount bankAccount = bankAccountService.getBankAccountById(newBankAccountId);
+        BankAccount nikolay = bankAccountService.getBankAccountById(BankAccountDto.NIKOLAY_STORONSKY_BANK_ACCOUNT_ID);
 
-        assertThat(bankAccount.getBalance(), Matchers.comparesEqualTo(INITIAL_BALANCE));
-        assertThat(bankAccount.getBlockedAmount(),
+        assertThat(bankAccount.getBalance(),
                 Matchers.comparesEqualTo(
-                        BigDecimal.ZERO.add(
-                            TRANSACTION_AMOUNT.multiply(BigDecimal.valueOf(INVOCATION_COUNT)))
+                        INITIAL_BALANCE.subtract(
+                                TRANSACTION_AMOUNT.multiply(BigDecimal.valueOf(INVOCATION_COUNT)))
                 )
         );
+        assertThat(bankAccount.getBlockedAmount(), Matchers.comparesEqualTo(BigDecimal.ZERO));
     }
 }
