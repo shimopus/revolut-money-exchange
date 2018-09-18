@@ -22,9 +22,9 @@ public class ConcurrentlyTransactionCreationAndExecutionTest {
     private TransactionsService transactionsService = TransactionsService.getInstance(new ConstantMoneyExchangeService());
     private BankAccountService bankAccountService = BankAccountService.getInstance();
 
-    private static final BigDecimal INITIAL_BALANCE = BigDecimal.valueOf(100L);
+    private static final BigDecimal INITIAL_BALANCE = BigDecimal.valueOf(1000L);
     private static final BigDecimal TRANSACTION_AMOUNT = BigDecimal.ONE;
-    private static final int INVOCATION_COUNT = 100;
+    private static final int INVOCATION_COUNT = 1000;
 
     private Long fromBankAccountId;
     private Long toBankAccountId;
@@ -50,7 +50,7 @@ public class ConcurrentlyTransactionCreationAndExecutionTest {
         toBankAccountId = bankAccountService.createBankAccount(toBankAccount).getId();
     }
 
-    @Test(threadPoolSize = 10, invocationCount = INVOCATION_COUNT)
+    @Test(threadPoolSize = 100, invocationCount = INVOCATION_COUNT)
     public void testConcurrentTransactionCreation() throws ObjectModificationException {
         int currentTestNumber = invocationsDone.addAndGet(1);
 
@@ -70,6 +70,7 @@ public class ConcurrentlyTransactionCreationAndExecutionTest {
 
     @AfterClass
     public void checkResults() {
+        transactionsService.executeTransactions();
         BankAccount fromBankAccount = bankAccountService.getBankAccountById(fromBankAccountId);
         assertThat(fromBankAccount.getBalance(),
                 Matchers.comparesEqualTo(
