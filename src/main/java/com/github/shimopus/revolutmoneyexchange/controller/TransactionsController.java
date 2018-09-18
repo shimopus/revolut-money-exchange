@@ -14,7 +14,6 @@ import javax.ws.rs.core.Response;
 /**
  * The resource is responsible for the Transaction entity. Make it possible to create,
  * update of transactions. Also there is an ability to execute created transaction
- *
  */
 @Path(TransactionsController.BASE_URL)
 @Produces(MediaType.APPLICATION_JSON)
@@ -29,9 +28,7 @@ public class TransactionsController {
     /**
      * Returns all transactions in the system with there statuses
      *
-     * @return
-     *
-     * TODO: multi paging should be implemented
+     * @return TODO: multi paging should be implemented
      */
     @GET
     public Response getAllTransactions() {
@@ -56,13 +53,8 @@ public class TransactionsController {
      * @return
      */
     @POST()
-    public Response createTransaction(Transaction transaction) {
-        try {
-            transaction = transactionsService.createTransaction(transaction);
-        } catch (ObjectModificationException e) {
-            log.error(e.getMessage(), e);
-            return Response.serverError().entity(e.getMessage()).build();
-        }
+    public Response createTransaction(Transaction transaction) throws ObjectModificationException {
+        transaction = transactionsService.createTransaction(transaction);
 
         return Response.ok().entity(transaction).build();
     }

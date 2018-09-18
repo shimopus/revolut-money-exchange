@@ -3,6 +3,7 @@ package com.github.shimopus.revolutmoneyexchange.controller;
 import com.github.shimopus.revolutmoneyexchange.exceptions.ImpossibleOperationExecution;
 import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
 import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
+import com.github.shimopus.revolutmoneyexchange.model.ExceptionType;
 import com.github.shimopus.revolutmoneyexchange.service.BankAccountService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,18 +22,13 @@ public class BankAccountsController {
     public static final String GET_BANK_ACCOUNT_BY_ID_PATH = "id";
 
     /**
-     *
      * @return
      */
     @GET
     public Response getAllBankAccounts() {
         Collection<BankAccount> bankAccounts = null;
 
-        try {
-            bankAccounts = BankAccountService.getInstance().getAllBankAccounts();
-        } catch (ImpossibleOperationExecution e) {
-            Response.serverError().entity(e).build();
-        }
+        bankAccounts = BankAccountService.getInstance().getAllBankAccounts();
 
         if (bankAccounts == null) {
             Response.noContent().build();
@@ -42,7 +38,6 @@ public class BankAccountsController {
     }
 
     /**
-     *
      * @return
      */
     @GET
@@ -50,63 +45,35 @@ public class BankAccountsController {
     public Response getBankAccountById(@PathParam(GET_BANK_ACCOUNT_BY_ID_PATH) Long id) {
         BankAccount bankAccount;
 
-        try {
-            bankAccount = BankAccountService.getInstance().getBankAccountById(id);
-        } catch (ImpossibleOperationExecution e) {
-            return Response.serverError().entity(e).build();
-        }
+
+        bankAccount = BankAccountService.getInstance().getBankAccountById(id);
 
         if (bankAccount == null) {
-            return Response.status(Response.Status.NOT_FOUND).build();
+            throw new WebApplicationException("The bank account is not exists", Response.Status.NOT_FOUND);
         }
 
         return Response.ok(bankAccount).build();
     }
 
     /**
-     *
      * @return
      */
     @PUT
-    public Response updateBankAccount(BankAccount bankAccount) {
-        try {
-            BankAccountService.getInstance().updateBankAccount(bankAccount);
-        } catch (ObjectModificationException e) {
-            return unwrapObjectUpdateException(e);
-        }
+    public Response updateBankAccount(BankAccount bankAccount) throws ObjectModificationException {
+        BankAccountService.getInstance().updateBankAccount(bankAccount);
 
         return Response.ok(bankAccount).build();
     }
 
     /**
-     *
      * @return
      */
     @POST
-    public Response createBankAccount(BankAccount bankAccount) {
+    public Response createBankAccount(BankAccount bankAccount) throws ObjectModificationException {
         BankAccount createdBankAccount;
 
-        try {
-            createdBankAccount = BankAccountService.getInstance().createBankAccount(bankAccount);
-        } catch (ObjectModificationException e) {
-            return unwrapObjectUpdateException(e);
-        }
+        createdBankAccount = BankAccountService.getInstance().createBankAccount(bankAccount);
 
         return Response.ok(createdBankAccount).build();
-    }
-
-    private Response unwrapObjectUpdateException(ObjectModificationException exception) {
-        log.error(exception.getMessage(), exception);
-
-        ObjectModificationException.Type type = exception.getType();
-
-        if (type == ObjectModificationException.Type.OBJECT_IS_NOT_FOUND) {
-            return Response.status(Response.Status.NOT_FOUND).entity(type.getMessage()).build();
-        }
-        if (type == ObjectModificationException.Type.OBJECT_IS_MALFORMED) {
-            return Response.serverError().entity(type.getMessage()).build();
-        }
-
-        return Response.serverError().build();
     }
 }

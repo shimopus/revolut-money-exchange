@@ -4,10 +4,7 @@ import com.github.shimopus.revolutmoneyexchange.db.DbUtils;
 import com.github.shimopus.revolutmoneyexchange.db.H2DataSource;
 import com.github.shimopus.revolutmoneyexchange.exceptions.ImpossibleOperationExecution;
 import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
-import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
-import com.github.shimopus.revolutmoneyexchange.model.Currency;
-import com.github.shimopus.revolutmoneyexchange.model.Transaction;
-import com.github.shimopus.revolutmoneyexchange.model.TransactionStatus;
+import com.github.shimopus.revolutmoneyexchange.model.*;
 import com.github.shimopus.revolutmoneyexchange.service.MoneyExchangeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,7 +142,7 @@ public class TransactionDto {
             //Check that from bank account has enough money
             if (fromBankAccount.getBalance().subtract(fromBankAccount.getBlockedAmount())
                     .compareTo(amountToWithdraw) < 0) {
-                throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
+                throw new ObjectModificationException(ExceptionType.OBJECT_IS_MALFORMED,
                         "The specified bank account could not transfer this amount of money. " +
                                 "His balance does not have enough money");
             }
@@ -158,7 +155,7 @@ public class TransactionDto {
                     new DbUtils.CreationQueryExecutor<>(transaction, TransactionDto::fillInPreparedStatement)).getResult();
 
             if (transaction == null) {
-                throw new ObjectModificationException(ObjectModificationException.Type.COULD_NOT_OBTAIN_ID);
+                throw new ObjectModificationException(ExceptionType.COULD_NOT_OBTAIN_ID);
             }
 
             con.commit();
@@ -176,7 +173,7 @@ public class TransactionDto {
 
     public void executeTransaction(Long id) throws ObjectModificationException {
         if (id == null) {
-            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
+            throw new ObjectModificationException(ExceptionType.OBJECT_IS_MALFORMED,
                     "The specified transaction doesn't exists");
         }
 
@@ -282,7 +279,7 @@ public class TransactionDto {
         }
 
         if (result == 0) {
-            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_NOT_FOUND);
+            throw new ObjectModificationException(ExceptionType.OBJECT_IS_NOT_FOUND);
         }
     }
 
@@ -291,7 +288,7 @@ public class TransactionDto {
                 transaction.getToBankAccountId() == null || transaction.getCurrency() == null
                 || transaction.getStatus() == null || transaction.getCreationDate() == null
                 || transaction.getUpdateDate() == null) {
-            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED, "Fields could not be NULL");
+            throw new ObjectModificationException(ExceptionType.OBJECT_IS_MALFORMED, "Fields could not be NULL");
         }
     }
 

@@ -4,6 +4,7 @@ import com.github.shimopus.revolutmoneyexchange.db.DbUtils;
 import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
 import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
 import com.github.shimopus.revolutmoneyexchange.model.Currency;
+import com.github.shimopus.revolutmoneyexchange.model.ExceptionType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -120,7 +121,7 @@ public class BankAccountDto {
         }
 
         if (result == 0) {
-            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_NOT_FOUND);
+            throw new ObjectModificationException(ExceptionType.OBJECT_IS_NOT_FOUND);
         }
     }
 
@@ -140,7 +141,7 @@ public class BankAccountDto {
                 new DbUtils.CreationQueryExecutor<>(bankAccount, BankAccountDto::fillInPreparedStatement)).getResult();
 
         if (bankAccount == null) {
-            throw new ObjectModificationException(ObjectModificationException.Type.COULD_NOT_OBTAIN_ID);
+            throw new ObjectModificationException(ExceptionType.COULD_NOT_OBTAIN_ID);
         }
 
         return bankAccount;
@@ -159,13 +160,13 @@ public class BankAccountDto {
 
     private void verify(BankAccount bankAccount) throws ObjectModificationException {
         if (bankAccount.getId() == null) {
-            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
+            throw new ObjectModificationException(ExceptionType.OBJECT_IS_MALFORMED,
                     "ID value is invalid");
         }
 
         if (bankAccount.getOwnerName() == null || bankAccount.getBalance() == null ||
                 bankAccount.getBlockedAmount() == null || bankAccount.getCurrency() == null) {
-            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED, "Fields could not be NULL");
+            throw new ObjectModificationException(ExceptionType.OBJECT_IS_MALFORMED, "Fields could not be NULL");
         }
     }
 

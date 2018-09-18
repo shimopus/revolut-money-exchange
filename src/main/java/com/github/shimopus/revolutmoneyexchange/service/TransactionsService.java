@@ -2,6 +2,7 @@ package com.github.shimopus.revolutmoneyexchange.service;
 
 import com.github.shimopus.revolutmoneyexchange.dto.TransactionDto;
 import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
+import com.github.shimopus.revolutmoneyexchange.model.ExceptionType;
 import com.github.shimopus.revolutmoneyexchange.model.Transaction;
 import com.github.shimopus.revolutmoneyexchange.model.TransactionStatus;
 import org.slf4j.Logger;
@@ -61,15 +62,15 @@ public class TransactionsService {
      */
     public Transaction createTransaction(Transaction transaction) throws ObjectModificationException {
         if (transaction.getFromBankAccountId() == null || transaction.getToBankAccountId() == null) {
-            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
+            throw new ObjectModificationException(ExceptionType.OBJECT_IS_MALFORMED,
                     "The transaction has not provided from Bank Account or to Bank Account values");
         }
         if (transaction.getFromBankAccountId().equals(transaction.getToBankAccountId())) {
-            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
+            throw new ObjectModificationException(ExceptionType.OBJECT_IS_MALFORMED,
                     "The sender and recipient should not be same");
         }
         if (transaction.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
+            throw new ObjectModificationException(ExceptionType.OBJECT_IS_MALFORMED,
                     "The amount should be more than 0");
         }
 
