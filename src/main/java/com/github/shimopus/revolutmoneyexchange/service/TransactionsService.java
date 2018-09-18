@@ -24,7 +24,7 @@ public class TransactionsService {
     /**
      * Constructor made just for testing purpose
      */
-    public TransactionsService(TransactionDto transactionDto) {
+    TransactionsService(TransactionDto transactionDto) {
         this.transactionDto = transactionDto;
         executorService.scheduleAtFixedRate(() ->
                         ts.executeTransactions(),

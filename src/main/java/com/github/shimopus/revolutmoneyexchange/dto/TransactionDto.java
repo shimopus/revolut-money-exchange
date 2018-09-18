@@ -9,6 +9,8 @@ import com.github.shimopus.revolutmoneyexchange.service.MoneyExchangeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.ArrayList;
@@ -26,6 +28,7 @@ public class TransactionDto {
     private static final String TRANSACTION_CREATION_DATE_ROW = "creation_date";
     private static final String TRANSACTION_UPDATE_DATE_ROW = "update_date";
     private static final String TRANSACTION_STATUS_ROW = "status_id";
+    private static final String FAIL_MESSAGE_ROW = "failMessage";
 
     public static final String GET_ALL_TRANSACTIONS_SQL = "select * from " + TRANSACTION_TABLE_NAME;
     public static final String GET_TRANSACTIONS_BY_STATUS_SQL =
@@ -47,7 +50,7 @@ public class TransactionDto {
     }
 
     //Just for testing purpose
-    public TransactionDto(DbUtils dbUtils) {
+    TransactionDto(DbUtils dbUtils) {
         this.dbUtils = dbUtils;
     }
 
@@ -121,9 +124,10 @@ public class TransactionDto {
                         TRANSACTION_AMOUNT_ROW + ", " +
                         TRANSACTION_CURRENCY_ROW + ", " +
                         TRANSACTION_STATUS_ROW + ", " +
+                        FAIL_MESSAGE_ROW + ", " +
                         TRANSACTION_CREATION_DATE_ROW + ", " +
                         TRANSACTION_UPDATE_DATE_ROW +
-                        ") values (?, ?, ?, ?, ?, ?, ?)";
+                        ") values (?, ?, ?, ?, ?, ?, ?, ?)";
 
         verify(transaction);
 
@@ -199,8 +203,8 @@ public class TransactionDto {
 
             if (newBlockedAmount.compareTo(BigDecimal.ZERO) < 0 || newBalance.compareTo(BigDecimal.ZERO) < 0) {
                 transaction.setStatus(TransactionStatus.FAILED);
-                //TODO set error message into the transaction
-                updateTransaction(transaction, con);
+                transaction.setFailMessage(String.format("There is no enough money. Current balance is %f",
+                        fromBankAccount.getBalance().doubleValue()));
             } else {
                 fromBankAccount.setBlockedAmount(newBlockedAmount);
                 fromBankAccount.setBalance(newBalance);
@@ -218,15 +222,20 @@ public class TransactionDto {
                 bankAccountDto.updateBankAccount(toBankAccount, con);
 
                 transaction.setStatus(TransactionStatus.SUCCEED);
-
-                updateTransaction(transaction, con);
             }
+
+            updateTransaction(transaction, con);
 
             con.commit();
         } catch (RuntimeException | SQLException e) {
             DbUtils.safeRollback(con);
             if (transaction != null) {
                 transaction.setStatus(TransactionStatus.FAILED);
+                StringWriter sw = new StringWriter();
+                e.printStackTrace(new PrintWriter(sw));
+                String exceptionAsString = String.format("Transaction has been rolled back as it was unexpected exception: %s",
+                        sw.toString()).substring(0, 4000);
+                transaction.setFailMessage(exceptionAsString);
                 updateTransaction(transaction);
             }
             log.error("Unexpected exception", e);
@@ -258,6 +267,7 @@ public class TransactionDto {
                 "update " + TRANSACTION_TABLE_NAME +
                         " set " +
                         TRANSACTION_STATUS_ROW + " = ?, " +
+                        FAIL_MESSAGE_ROW + " = ?, " +
                         TRANSACTION_UPDATE_DATE_ROW + " = ? " +
                         "where " + TRANSACTION_ID_ROW + " = ?";
 
@@ -265,8 +275,9 @@ public class TransactionDto {
 
         DbUtils.QueryExecutor<Integer> queryExecutor = updateTransaction -> {
             updateTransaction.setInt(1, transaction.getStatus().getId());
-            updateTransaction.setDate(2, new Date(new java.util.Date().getTime()));
-            updateTransaction.setLong(3, transaction.getId());
+            updateTransaction.setString(2, transaction.getFailMessage());
+            updateTransaction.setDate(3, new Date(new java.util.Date().getTime()));
+            updateTransaction.setLong(4, transaction.getId());
 
             return updateTransaction.executeUpdate();
         };
@@ -299,8 +310,9 @@ public class TransactionDto {
             preparedStatement.setBigDecimal(3, transaction.getAmount());
             preparedStatement.setInt(4, transaction.getCurrency().getId());
             preparedStatement.setInt(5, transaction.getStatus().getId());
-            preparedStatement.setDate(6, new java.sql.Date(transaction.getCreationDate().getTime()));
-            preparedStatement.setDate(7, new java.sql.Date(transaction.getUpdateDate().getTime()));
+            preparedStatement.setString(6, transaction.getFailMessage());
+            preparedStatement.setDate(7, new java.sql.Date(transaction.getCreationDate().getTime()));
+            preparedStatement.setDate(8, new java.sql.Date(transaction.getUpdateDate().getTime()));
         } catch (SQLException e) {
             log.error("Transactions prepared statement could not be initialized by values", e);
         }
@@ -315,6 +327,7 @@ public class TransactionDto {
         transaction.setAmount(transactionsRS.getBigDecimal(TRANSACTION_AMOUNT_ROW));
         transaction.setCurrency(Currency.valueOf(transactionsRS.getInt(TRANSACTION_CURRENCY_ROW)));
         transaction.setStatus(TransactionStatus.valueOf(transactionsRS.getInt(TRANSACTION_STATUS_ROW)));
+        transaction.setFailMessage(transactionsRS.getString(TRANSACTION_STATUS_ROW));
         transaction.setCreationDate(transactionsRS.getDate(TRANSACTION_CREATION_DATE_ROW));
         transaction.setUpdateDate(transactionsRS.getDate(TRANSACTION_UPDATE_DATE_ROW));
         return transaction;

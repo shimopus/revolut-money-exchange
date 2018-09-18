@@ -13,6 +13,7 @@ public class Transaction implements ModelHasId{
     private Date creationDate;
     private Date updateDate;
     private TransactionStatus status;
+    private String failMessage = "";
 
     public Transaction() {
         this.creationDate = new Date();
@@ -90,6 +91,14 @@ public class Transaction implements ModelHasId{
 
     public void setStatus(TransactionStatus status) {
         this.status = status;
+    }
+
+    public String getFailMessage() {
+        return failMessage;
+    }
+
+    public void setFailMessage(String failMessage) {
+        this.failMessage = failMessage;
     }
 
     @Override

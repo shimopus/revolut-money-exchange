@@ -26,19 +26,28 @@ public class ConcurrentlyTransactionCreationAndExecutionTest {
     private static final BigDecimal TRANSACTION_AMOUNT = BigDecimal.ONE;
     private static final int INVOCATION_COUNT = 100;
 
-    private Long newBankAccountId;
+    private Long fromBankAccountId;
+    private Long toBankAccountId;
     private AtomicInteger invocationsDone = new AtomicInteger(0);
 
     @BeforeClass
     public void initData() throws ObjectModificationException {
-        BankAccount bankAccount = new BankAccount(
-                "New Bank Account",
+        BankAccount fromBankAccount = new BankAccount(
+                "New Bank Account 1",
                 INITIAL_BALANCE,
                 BigDecimal.ZERO,
                 Currency.EUR
         );
 
-        newBankAccountId = bankAccountService.createBankAccount(bankAccount).getId();
+        BankAccount toBankAccount = new BankAccount(
+                "New Bank Account 2",
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                Currency.USD
+        );
+
+        fromBankAccountId = bankAccountService.createBankAccount(fromBankAccount).getId();
+        toBankAccountId = bankAccountService.createBankAccount(toBankAccount).getId();
     }
 
     @Test(threadPoolSize = 10, invocationCount = INVOCATION_COUNT)
@@ -46,8 +55,8 @@ public class ConcurrentlyTransactionCreationAndExecutionTest {
         int currentTestNumber = invocationsDone.addAndGet(1);
 
         Transaction transaction = new Transaction(
-                newBankAccountId,
-                BankAccountDto.NIKOLAY_STORONSKY_BANK_ACCOUNT_ID,
+                fromBankAccountId,
+                toBankAccountId,
                 TRANSACTION_AMOUNT,
                 Currency.EUR
         );
@@ -61,15 +70,13 @@ public class ConcurrentlyTransactionCreationAndExecutionTest {
 
     @AfterClass
     public void checkResults() {
-        BankAccount bankAccount = bankAccountService.getBankAccountById(newBankAccountId);
-        BankAccount nikolay = bankAccountService.getBankAccountById(BankAccountDto.NIKOLAY_STORONSKY_BANK_ACCOUNT_ID);
-
-        assertThat(bankAccount.getBalance(),
+        BankAccount fromBankAccount = bankAccountService.getBankAccountById(fromBankAccountId);
+        assertThat(fromBankAccount.getBalance(),
                 Matchers.comparesEqualTo(
                         INITIAL_BALANCE.subtract(
                                 TRANSACTION_AMOUNT.multiply(BigDecimal.valueOf(INVOCATION_COUNT)))
                 )
         );
-        assertThat(bankAccount.getBlockedAmount(), Matchers.comparesEqualTo(BigDecimal.ZERO));
+        assertThat(fromBankAccount.getBlockedAmount(), Matchers.comparesEqualTo(BigDecimal.ZERO));
     }
 }
