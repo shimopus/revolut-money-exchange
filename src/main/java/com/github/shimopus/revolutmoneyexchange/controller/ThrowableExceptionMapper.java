@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.WebApplicationException;
+import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
@@ -18,7 +19,7 @@ public class ThrowableExceptionMapper implements ExceptionMapper<Throwable> {
     @Override
     public Response toResponse(Throwable exception) {
         ApplicationException applicationException;
-        Response.ResponseBuilder serverError = Response.serverError();
+        Response.ResponseBuilder serverError = Response.serverError().type(MediaType.APPLICATION_JSON_TYPE);
 
         if (exception instanceof WebApplicationException) {
             applicationException = new ApplicationException(ExceptionType.UNEXPECTED_EXCEPTION.name(),

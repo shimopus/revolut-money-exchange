@@ -5,6 +5,9 @@ public class ApplicationException {
     private String name;
     private String message;
 
+    public ApplicationException() {
+    }
+
     public ApplicationException(ExceptionType exceptionType, String message) {
         this.type = exceptionType.name();
         this.name = exceptionType.getMessage();
@@ -27,5 +30,17 @@ public class ApplicationException {
 
     public String getMessage() {
         return message;
+    }
+
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
     }
 }
