@@ -1,32 +1,31 @@
 package com.github.shimopus.revolutmoneyexchange.controller;
 
-import com.github.shimopus.revolutmoneyexchange.exceptions.ImpossibleOperationExecution;
 import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException;
 import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
-import com.github.shimopus.revolutmoneyexchange.model.ExceptionType;
 import com.github.shimopus.revolutmoneyexchange.service.BankAccountService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.ws.rs.*;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.Collection;
 
+/**
+ * This class is responsible for CRUD operations of Bank Account object
+ */
 @Path(BankAccountsController.BASE_URL)
 @Produces(MediaType.APPLICATION_JSON)
 public class BankAccountsController {
-    private final Logger log = LoggerFactory.getLogger(BankAccountsController.class);
-
     public static final String BASE_URL = "/bankAccounts";
     public static final String GET_BANK_ACCOUNT_BY_ID_PATH = "id";
 
     /**
-     * @return
+     * @return The full list of Bank Account objects which has been registered at the time.
+     *
+     * TODO: Add multipaging
      */
     @GET
     public Response getAllBankAccounts() {
-        Collection<BankAccount> bankAccounts = null;
+        Collection<BankAccount> bankAccounts;
 
         bankAccounts = BankAccountService.getInstance().getAllBankAccounts();
 
@@ -38,7 +37,10 @@ public class BankAccountsController {
     }
 
     /**
-     * @return
+     * @param id The ID of Bank Account
+     *
+     * @return The Bank Account object which has particular ID. This ID has been generated and returned
+     * during the Bank Account creation by the <code>POST: /bankAccount</code> endpoint
      */
     @GET
     @Path("{" + GET_BANK_ACCOUNT_BY_ID_PATH + "}")
@@ -56,7 +58,12 @@ public class BankAccountsController {
     }
 
     /**
-     * @return
+     * Updates the particular Bank Account with the parameters provided. The Bank Account which should be
+     * updated is searching by the ID which has provided object
+     *
+     * @param bankAccount the Bank Account object (id should be specified) which will update the data
+     *
+     * @return updated Bank Account object. In general it should be object with the same parameters as provided had
      */
     @PUT
     public Response updateBankAccount(BankAccount bankAccount) throws ObjectModificationException {
@@ -66,7 +73,12 @@ public class BankAccountsController {
     }
 
     /**
-     * @return
+     * Creates the Bank Account object with the provided parameters. It doesn't mean if provided object will have
+     * an ID specified. This ID will be regenerated and returned in the response object
+     *
+     * @param bankAccount the Bank Account object to create with parameters specified
+     *
+     * @return Bank Account object with the ID parameter specified.
      */
     @POST
     public Response createBankAccount(BankAccount bankAccount) throws ObjectModificationException {
