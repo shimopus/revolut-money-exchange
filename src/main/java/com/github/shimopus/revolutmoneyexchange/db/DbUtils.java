@@ -21,6 +21,9 @@ public class DbUtils {
     private DbUtils() {
     }
 
+    /**
+     * @return the singleton object of DbUtils class
+     */
     public static DbUtils getInstance() {
         return dbUtils;
     }
@@ -43,7 +46,6 @@ public class DbUtils {
      *
      * @param query         the query string which will be passed into <code>Connection.preparedStatement</code> method
      * @param queryExecutor the executor with only one method accepting <code>PreparedStatement</code> instance created
-     *
      * @return query result object with the only method <code>getResult</code> returns the result of queryExecutor
      */
     public <E> QueryResult<E> executeQuery(String query, QueryExecutor<E> queryExecutor) {
@@ -126,10 +128,21 @@ public class DbUtils {
         }
     }
 
+    /**
+     * The Interface used to implement the logic which will be applied for the provided <code>preparedStatement</code>
+     * Used only to work with methods from <code>DbUtils</code> class.
+     *
+     * @param <T> the type of object which will be returned by the query
+     */
     public interface QueryExecutor<T> {
         T execute(PreparedStatement preparedStatement) throws SQLException;
     }
 
+    /**
+     * The class used to wrap and generify result provided by <code>QueryExecutor</code>
+     *
+     * @param <T> the type of object which will be returned by the query
+     */
     public static class QueryResult<T> {
         private T result;
 
