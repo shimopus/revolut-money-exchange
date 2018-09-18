@@ -1,4 +1,4 @@
-package com.github.shimopus.revolutmoneyexchange.controller.service;
+package com.github.shimopus.revolutmoneyexchange.service;
 
 import com.github.shimopus.revolutmoneyexchange.dto.BankAccountDto;
 import com.github.shimopus.revolutmoneyexchange.dto.TransactionDto;
@@ -6,12 +6,9 @@ import com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationExc
 import com.github.shimopus.revolutmoneyexchange.model.Currency;
 import com.github.shimopus.revolutmoneyexchange.model.Transaction;
 import com.github.shimopus.revolutmoneyexchange.model.TransactionStatus;
-import com.github.shimopus.revolutmoneyexchange.service.ConstantMoneyExchangeService;
-import com.github.shimopus.revolutmoneyexchange.service.TransactionsService;
 import org.testng.annotations.Test;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;

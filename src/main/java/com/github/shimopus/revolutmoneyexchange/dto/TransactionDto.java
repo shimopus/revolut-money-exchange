@@ -34,10 +34,11 @@ public class TransactionDto {
     public static final String GET_TRANSACTIONS_BY_STATUS_SQL =
             "select id from " + TRANSACTION_TABLE_NAME + " trans " +
                     "where trans." + TRANSACTION_STATUS_ROW + " = ?";
-    public static final String GET_TRANSACTIONS_FOR_UPDATE_BY_ID_SQL =
+    public static final String GET_TRANSACTIONS_BY_ID_SQL =
             "select * from " + TRANSACTION_TABLE_NAME + " trans " +
-                    "where trans." + TRANSACTION_ID_ROW + " = ? " +
-                    "for update";
+                    "where trans." + TRANSACTION_ID_ROW + " = ?";
+    public static final String GET_TRANSACTIONS_FOR_UPDATE_BY_ID_SQL =
+            GET_TRANSACTIONS_BY_ID_SQL + " for update";
 
     private static TransactionDto transactionDto;
     private BankAccountDto bankAccountDto = BankAccountDto.getInstance();
@@ -101,6 +102,19 @@ public class TransactionDto {
         }).getResult();
     }
 
+    public Transaction getTransactionById(Long id) {
+        return dbUtils.executeQuery(GET_TRANSACTIONS_BY_ID_SQL, getTransactionById -> {
+            getTransactionById.setLong(1, id);
+            try (ResultSet transactionRS = getTransactionById.executeQuery()) {
+                if (transactionRS != null && transactionRS.first()) {
+                    return extractTransactionFromResultSet(transactionRS);
+                }
+            }
+
+            return null;
+        }).getResult();
+    }
+
     public Transaction createTransaction(Transaction transaction) throws ObjectModificationException {
         String INSERT_TRANSACTION_SQL =
                 "insert into " + TRANSACTION_TABLE_NAME +
@@ -130,7 +144,7 @@ public class TransactionDto {
 
             //Check that from bank account has enough money
             if (fromBankAccount.getBalance().subtract(fromBankAccount.getBlockedAmount())
-                    .compareTo(amountToWithdraw) <= 0) {
+                    .compareTo(amountToWithdraw) < 0) {
                 throw new ObjectModificationException(ObjectModificationException.Type.OBJECT_IS_MALFORMED,
                         "The specified bank account could not transfer this amount of money. " +
                                 "His balance does not have enough money");
