@@ -12,6 +12,11 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
 
+/**
+ * This class is an Exception Mapper which is responsible for common error output generation.
+ * It handles any error fired and transform to appropriate <code>ApplicationException</code> object.
+ * This exception object will be returned to the client with the appropriate status.
+ */
 @Provider
 public class ThrowableExceptionMapper implements ExceptionMapper<Throwable> {
     private static final Logger log = LoggerFactory.getLogger(ThrowableExceptionMapper.class);
@@ -33,7 +38,7 @@ public class ThrowableExceptionMapper implements ExceptionMapper<Throwable> {
                 serverError = serverError.status(Response.Status.NOT_FOUND);
             }
             if (type == ExceptionType.OBJECT_IS_MALFORMED) {
-                serverError = serverError.status(Response.Status.INTERNAL_SERVER_ERROR);;
+                serverError = serverError.status(Response.Status.INTERNAL_SERVER_ERROR);
             }
             applicationException = new ApplicationException(type, exception.getMessage());
         } else {
@@ -46,13 +51,13 @@ public class ThrowableExceptionMapper implements ExceptionMapper<Throwable> {
     }
 
     private static String computeExceptionMessage(Response response) {
-        Object statusInfo;
+        Response.StatusType statusInfo;
         if (response != null) {
             statusInfo = response.getStatusInfo();
         } else {
             statusInfo = Response.Status.INTERNAL_SERVER_ERROR;
         }
 
-        return "HTTP " + ((Response.StatusType)statusInfo).getStatusCode() + ' ' + ((Response.StatusType)statusInfo).getReasonPhrase();
+        return "HTTP " + statusInfo.getStatusCode() + ' ' + statusInfo.getReasonPhrase();
     }
 }

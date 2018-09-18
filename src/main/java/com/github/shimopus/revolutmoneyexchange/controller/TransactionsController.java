@@ -12,8 +12,9 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
 /**
- * The resource is responsible for the Transaction entity. Make it possible to create,
- * update of transactions. Also there is an ability to execute created transaction
+ * The resource is responsible for the Transaction entity. Make it possible to create
+ * and provide transactions. There is no ability to update an existing transaction as it is controversial operation
+ * for this type of object. This object could be modified only by the system itself
  */
 @Path(TransactionsController.BASE_URL)
 @Produces(MediaType.APPLICATION_JSON)
@@ -36,9 +37,11 @@ public class TransactionsController {
     }
 
     /**
-     * Returns specific transaction by ID
+     * Returns transaction by specified ID
      *
-     * @return
+     * @param id transaction ID
+     *
+     * @return Transaction with the ID provided
      */
     @GET()
     @Path("{" + GET_TRANSACTION_BY_ID_PATH + "}")
@@ -48,9 +51,14 @@ public class TransactionsController {
 
     /**
      * Make it possible to create money transfer from one account to another.
-     * The result of execution is created transaction with actual status. Usually it is "IN PROGRESS"
+     * The result of execution is created transaction with actual status. Usually it is "IN PROGRESS".
+     * The transaction execution process is asynchronous and controlled by the system itself
      *
-     * @return
+     * @param transaction The transaction object which should be created. The only required fields are:
+     *                    <code>fromBankAccountId, toBankAccountId, amount, currency</code>. All other parameters
+     *                    will be ignored and created by the system
+     *
+     * @return created and updated transaction object provided
      */
     @POST()
     public Response createTransaction(Transaction transaction) throws ObjectModificationException {
