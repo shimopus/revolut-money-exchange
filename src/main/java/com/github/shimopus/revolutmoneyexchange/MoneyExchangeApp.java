@@ -3,6 +3,7 @@ package com.github.shimopus.revolutmoneyexchange;
 import org.glassfish.grizzly.http.server.HttpServer;
 import org.glassfish.jersey.grizzly2.httpserver.GrizzlyHttpServerFactory;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 
 import java.io.IOException;
 import java.net.URI;
@@ -23,6 +24,7 @@ public class MoneyExchangeApp {
 
     public static HttpServer startServer() {
         final ResourceConfig rc = new ResourceConfig().packages("com.github.shimopus.revolutmoneyexchange.controller");
+        rc.property(ServerProperties.RESPONSE_SET_STATUS_OVER_SEND_ERROR, "true");
         return GrizzlyHttpServerFactory.createHttpServer(URI.create(BASE_URI), rc);
     }
 }

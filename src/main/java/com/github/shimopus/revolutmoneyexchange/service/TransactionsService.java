@@ -51,6 +51,10 @@ public class TransactionsService {
         return transactionDto.getAllTransactionIdsByStatus(transactionStatus);
     }
 
+    public Transaction getTransactionById(Long id) {
+        return transactionDto.getTransactionById(id);
+    }
+
     /**
      * Make it possible to create money transfer from one account to another.
      * The result of execution is created transaction with actual status. Usually it is "IN PROGRESS"

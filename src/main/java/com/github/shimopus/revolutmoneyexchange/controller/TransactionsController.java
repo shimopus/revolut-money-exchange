@@ -32,7 +32,7 @@ public class TransactionsController {
      */
     @GET
     public Response getAllTransactions() {
-        return Response.ok("Yes, I can work").build();
+        return Response.ok().entity(transactionsService.getAllTransactions()).build();
     }
 
     /**
@@ -43,7 +43,7 @@ public class TransactionsController {
     @GET()
     @Path("{" + GET_TRANSACTION_BY_ID_PATH + "}")
     public Response getTransactionById(@PathParam(GET_TRANSACTION_BY_ID_PATH) Long id) {
-        return Response.ok("Yes, I can work").build();
+        return Response.ok().entity(transactionsService.getTransactionById(id)).build();
     }
 
     /**
