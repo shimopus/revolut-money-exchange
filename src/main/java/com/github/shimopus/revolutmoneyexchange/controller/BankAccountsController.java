@@ -59,7 +59,8 @@ public class BankAccountsController {
 
     /**
      * Updates the particular Bank Account with the parameters provided. The Bank Account which should be
-     * updated is searching by the ID which has provided object
+     * updated is searching by the ID which has provided object. You can not update <code>balance</code> and/or
+     * <code>blockedAmount</code> fields of the object as it is information maintained only by the system.
      *
      * @param bankAccount the Bank Account object (id should be specified) which will update the data
      *
