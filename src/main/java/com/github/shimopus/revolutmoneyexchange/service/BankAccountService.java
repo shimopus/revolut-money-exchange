@@ -6,6 +6,13 @@ import com.github.shimopus.revolutmoneyexchange.model.BankAccount;
 
 import java.util.Collection;
 
+/**
+ * Right now the proxy service under the {@link BankAccountDto}. Should be used to abstract the presentation layer
+ * from the persistence layer
+ *
+ * TODO: needs to move business logic from BankAccountDto. Validations for example.
+ * TODO: Use DI to abstract from persistence layer
+ */
 public class BankAccountService {
     private static final BankAccountService bas = new BankAccountService();
 

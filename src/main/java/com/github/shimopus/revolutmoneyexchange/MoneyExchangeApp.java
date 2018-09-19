@@ -8,6 +8,11 @@ import org.glassfish.jersey.server.ServerProperties;
 import java.io.IOException;
 import java.net.URI;
 
+/**
+ * The Main class of the Money Transfer RESTful application provides the ability to transfer money form one
+ * Bank Account to another.
+ * It will start the web server on localhost:8080
+ */
 public class MoneyExchangeApp {
     public static final String BASE_URI = "http://localhost:8080/";
 

@@ -14,6 +14,14 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * Right now the proxy service under the {@link TransactionDto}. Should be used to abstract the presentation layer
+ * from the persistence layer.
+ *
+ * Additionally it schedule the transaction execution service.
+ *
+ * TODO: make TransactionDto as an interface and pass it into the constructor. Use DI.
+ */
 public class TransactionsService {
     private static final Logger log = LoggerFactory.getLogger(TransactionsService.class);
 
