@@ -1,5 +1,8 @@
 package com.github.shimopus.revolutmoneyexchange.model;
 
+/**
+ * The dictionary wrapper related to the database table <code>transaction_status</code>
+ */
 public enum TransactionStatus {
     PLANNED(1), PROCESSING(2), FAILED(3), SUCCEED(4);
 

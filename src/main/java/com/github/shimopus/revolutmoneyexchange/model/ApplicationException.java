@@ -1,5 +1,8 @@
 package com.github.shimopus.revolutmoneyexchange.model;
 
+/**
+ * The exception wrapper object to be return to the client as a response when some error will be occurred
+ */
 public class ApplicationException {
     private String type;
     private String name;

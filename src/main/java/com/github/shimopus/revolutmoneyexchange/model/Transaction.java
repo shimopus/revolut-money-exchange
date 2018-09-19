@@ -4,6 +4,12 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.Objects;
 
+/**
+ * Transaction entity model. Relates to the database table <code>transaction</code>. Defines the transferring transaction
+ * which is initialized by <code>fromBankAccount</code> who wants to transfer money to the <code>toBankAccount</code>
+ * of <code>amount</code> in <code>currency</code> currency. Additionally this class controls the creation and last
+ * update dates alongside with the actual {@link TransactionStatus} <code>status</code>  and <code>failMessage</code> in case of FAIL status.
+ */
 public class Transaction implements ModelHasId{
     private Long id;
     private Long fromBankAccountId;
@@ -13,12 +19,13 @@ public class Transaction implements ModelHasId{
     private Date creationDate;
     private Date updateDate;
     private TransactionStatus status;
-    private String failMessage = "";
+    private String failMessage;
 
     public Transaction() {
         this.creationDate = new Date();
         this.updateDate = new Date();
         this.status = TransactionStatus.PLANNED;
+        this.failMessage = "";
     }
 
     public Transaction(Long fromBankAccountId, Long toBankAccountId, BigDecimal amount, Currency currency) {

@@ -2,6 +2,10 @@ package com.github.shimopus.revolutmoneyexchange.exceptions;
 
 import com.github.shimopus.revolutmoneyexchange.model.ExceptionType;
 
+/**
+ * The exception which is thrown once some validation or data consistency error detected. It has additional
+ * field {@link ExceptionType} which specify additional nature of the exception
+ */
 public class ObjectModificationException extends Exception {
     private ExceptionType type;
 

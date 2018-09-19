@@ -1,5 +1,8 @@
 package com.github.shimopus.revolutmoneyexchange.model;
 
+/**
+ * The dictionary wrapper related to the database table <code>currency</code>
+ */
 public enum Currency {
     USD(1), EUR(2), RUB(3);
 

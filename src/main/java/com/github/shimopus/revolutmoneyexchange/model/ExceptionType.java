@@ -1,5 +1,9 @@
 package com.github.shimopus.revolutmoneyexchange.model;
 
+/**
+ * Used mostly in the {@link com.github.shimopus.revolutmoneyexchange.exceptions.ObjectModificationException} to
+ * specify the particular type of the exception
+ */
 public enum ExceptionType {
     OBJECT_IS_MALFORMED("The entity passed has been malformed"),
     OBJECT_IS_NOT_FOUND("The entity with provided ID has not been found"),

@@ -4,6 +4,12 @@ import java.math.BigDecimal;
 import java.util.Objects;
 import java.util.Random;
 
+/**
+ * Bank Account entity model. Relates to the database table <code>bank_account</code>. Defines the bank account of
+ * individual with <code>ownerName</code>. It has <code>balance</code> in specific money <code>currency</code>. Once
+ * there is any PLANNED transferring transaction in the system relates to this Bank Account, the transaction amount is
+ * reserved in <code>blockedAmount</code> field
+ */
 public class BankAccount implements ModelHasId {
     private Long id;
     private String ownerName;
