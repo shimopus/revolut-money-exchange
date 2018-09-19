@@ -29,7 +29,7 @@ public class BankAccountService {
     }
 
     public void updateBankAccount(BankAccount bankAccount) throws ObjectModificationException {
-        BankAccountDto.getInstance().updateBankAccount(bankAccount);
+        BankAccountDto.getInstance().updateBankAccountSafe(bankAccount);
     }
 
     public BankAccount createBankAccount(BankAccount bankAccount) throws ObjectModificationException {

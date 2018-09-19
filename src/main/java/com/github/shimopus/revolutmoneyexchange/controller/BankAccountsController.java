@@ -18,6 +18,8 @@ public class BankAccountsController {
     public static final String BASE_URL = "/bankAccounts";
     public static final String GET_BANK_ACCOUNT_BY_ID_PATH = "id";
 
+    private final static BankAccountService BANK_ACCOUNT_SERVICE = BankAccountService.getInstance();
+
     /**
      * @return The full list of Bank Account objects which has been registered at the time.
      *
@@ -27,7 +29,7 @@ public class BankAccountsController {
     public Response getAllBankAccounts() {
         Collection<BankAccount> bankAccounts;
 
-        bankAccounts = BankAccountService.getInstance().getAllBankAccounts();
+        bankAccounts = BANK_ACCOUNT_SERVICE.getAllBankAccounts();
 
         if (bankAccounts == null) {
             Response.noContent().build();
@@ -48,7 +50,7 @@ public class BankAccountsController {
         BankAccount bankAccount;
 
 
-        bankAccount = BankAccountService.getInstance().getBankAccountById(id);
+        bankAccount = BANK_ACCOUNT_SERVICE.getBankAccountById(id);
 
         if (bankAccount == null) {
             throw new WebApplicationException("The bank account is not exists", Response.Status.NOT_FOUND);
@@ -85,7 +87,7 @@ public class BankAccountsController {
     public Response createBankAccount(BankAccount bankAccount) throws ObjectModificationException {
         BankAccount createdBankAccount;
 
-        createdBankAccount = BankAccountService.getInstance().createBankAccount(bankAccount);
+        createdBankAccount = BANK_ACCOUNT_SERVICE.createBankAccount(bankAccount);
 
         return Response.ok(createdBankAccount).build();
     }

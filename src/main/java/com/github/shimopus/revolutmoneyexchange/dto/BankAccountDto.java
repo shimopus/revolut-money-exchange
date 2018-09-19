@@ -44,7 +44,7 @@ public class BankAccountDto {
 
     /**
      * @return All Bank Accounts which is exists in the database at the moment
-     *
+     * <p>
      * TODO: add multipaging
      */
     public Collection<BankAccount> getAllBankAccounts() {
@@ -67,7 +67,6 @@ public class BankAccountDto {
      * Returns Bank Account object by id specified
      *
      * @param id Bank Account object id
-     *
      * @return Bank Account object with id specified
      */
     public BankAccount getBankAccountById(Long id) {
@@ -91,7 +90,7 @@ public class BankAccountDto {
      * Special form of {@link #getBankAccountById(Long)} method which is not closing the connection once result
      * will be obtained. We are using it only inside the related <code>TransactionDto</code>
      *
-     * @param id Bank Account object id
+     * @param id  Bank Account object id
      * @param con the <code>Connection</code> to be used for this query
      */
     BankAccount getForUpdateBankAccountById(Connection con, Long id) {
@@ -113,26 +112,46 @@ public class BankAccountDto {
     }
 
     /**
-     * Updates the Bank Account with changed parameters using the id provided by the object passed. The method
-     * is private as it should not be used by anyone except this class
+     * Updates the Bank Account with changed parameters using the id provided by the object passed. Only ownerName
+     * parameter will be updated.
      *
      * @param bankAccount - the object to be updated
-     * @throws ObjectModificationException if Bank Account with the provided id will not be exists in the database at the
-     * moment or object provided is malformed
+     * @throws ObjectModificationException if Bank Account with the provided id will not be exists in the database at
+     *                                     the moment or object provided is malformed
      */
-    public void updateBankAccount(BankAccount bankAccount) throws ObjectModificationException {
-        updateBankAccount(bankAccount, null);
+    public void updateBankAccountSafe(BankAccount bankAccount) throws ObjectModificationException {
+        String UPDATE_BANK_ACCOUNT_SQL =
+                "update " + BANK_ACCOUNT_TABLE_NAME +
+                        " set " +
+                        BANK_ACCOUNT_OWNER_NAME_ROW + " = ? " +
+                        "where " + BANK_ACCOUNT_ID_ROW + " = ?";
+
+        if (bankAccount.getId() == null || bankAccount.getOwnerName() == null) {
+            throw new ObjectModificationException(ExceptionType.OBJECT_IS_MALFORMED, "Id and OwnerName fields could not be NULL");
+        }
+
+        DbUtils.QueryExecutor<Integer> queryExecutor = updateBankAccount -> {
+            updateBankAccount.setString(1, bankAccount.getOwnerName());
+            updateBankAccount.setLong(2, bankAccount.getId());
+
+            return updateBankAccount.executeUpdate();
+        };
+
+        int result = dbUtils.executeQuery(UPDATE_BANK_ACCOUNT_SQL, queryExecutor).getResult();
+
+        if (result == 0) {
+            throw new ObjectModificationException(ExceptionType.OBJECT_IS_NOT_FOUND);
+        }
     }
 
     /**
-     * Special form of {@link #updateBankAccount(BankAccount)} method which is not closing the connection once result
-     * will be obtained. We are using it only inside the related <code>TransactionDto</code>
+     * Updates the Bank Account with changed parameters using the id provided by the object passed.
+     * We are using it only inside the related <code>TransactionDto</code>
      *
      * @param bankAccount Bank Account object which will be updated
-     * @param con the <code>Connection</code> to be used for this query
-     *
+     * @param con         the <code>Connection</code> to be used for this query
      * @throws ObjectModificationException if Bank Account with the provided id will not be exists in the database at the
-     * moment or object provided is malformed
+     *                                     moment or object provided is malformed
      */
     void updateBankAccount(BankAccount bankAccount, Connection con) throws ObjectModificationException {
         String UPDATE_BANK_ACCOUNT_SQL =
@@ -155,7 +174,7 @@ public class BankAccountDto {
 
         int result;
         if (con == null) {
-             result = dbUtils.executeQuery(UPDATE_BANK_ACCOUNT_SQL, queryExecutor).getResult();
+            result = dbUtils.executeQuery(UPDATE_BANK_ACCOUNT_SQL, queryExecutor).getResult();
         } else {
             result = dbUtils.executeQueryInConnection(con, UPDATE_BANK_ACCOUNT_SQL, queryExecutor).getResult();
         }
@@ -170,11 +189,9 @@ public class BankAccountDto {
      * generated and returned in the result of the method.
      *
      * @param bankAccount Bank Account object which should be created
-     *
      * @return created Bank Account object with ID specified'
-     *
      * @throws ObjectModificationException if Bank Account with the provided id will not be exists in the database at the
-     * moment or object provided is malformed
+     *                                     moment or object provided is malformed
      */
     public BankAccount createBankAccount(BankAccount bankAccount) throws ObjectModificationException {
         String INSERT_BANK_ACCOUNT_SQL =
@@ -203,11 +220,9 @@ public class BankAccountDto {
      * extracts Bank Account parameters from the result set
      *
      * @param bankAccountsRS result set with parameters of the Bank Account
-     *
      * @return extracted Bank Account object
-     *
      * @throws SQLException if some parameters in result set will not be found or will have non compatible
-     * data type
+     *                      data type
      */
     private BankAccount extractBankAccountFromResultSet(ResultSet bankAccountsRS) throws SQLException {
         BankAccount bankAccount = new BankAccount();
@@ -224,7 +239,6 @@ public class BankAccountDto {
      * Verifies the validity of the Bank Account object to be saved into the database.
      *
      * @param bankAccount Bank Account object to be validated
-     *
      * @throws ObjectModificationException in case of any invalid parameter
      */
     private void verify(BankAccount bankAccount) throws ObjectModificationException {
@@ -243,9 +257,9 @@ public class BankAccountDto {
      * Fills the provided prepared statement with the Bank Account's parameters provided
      *
      * @param preparedStatement prepared statement to be filled in
-     * @param bankAccount the Bank Account object which should be used to fill in
+     * @param bankAccount       the Bank Account object which should be used to fill in
      */
-    private static void fillInPreparedStatement(PreparedStatement preparedStatement, BankAccount bankAccount){
+    private static void fillInPreparedStatement(PreparedStatement preparedStatement, BankAccount bankAccount) {
         try {
             preparedStatement.setString(1, bankAccount.getOwnerName());
             preparedStatement.setBigDecimal(2, bankAccount.getBalance());

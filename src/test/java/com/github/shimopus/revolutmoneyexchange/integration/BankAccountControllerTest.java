@@ -99,15 +99,18 @@ public class BankAccountControllerTest {
     }
 
     /**
-     * Tests the successful update of the bank account
+     * Tests the successful update of the bank account. Even if it will be attempt to update balance it will not be
+     * updated
      */
     @Test
     public void testUpdateBankAccount() {
         BankAccountService bankAccountService = BankAccountService.getInstance();
-        BigDecimal BLOCKED_AMOUNT = new BigDecimal(23);
+        String OWNER_NAME = "Owner Name";
 
         BankAccount secondAccount = bankAccountService.getBankAccountById(BankAccountDto.NIKOLAY_STORONSKY_BANK_ACCOUNT_ID);
-        secondAccount.setBlockedAmount(BLOCKED_AMOUNT);
+        secondAccount.setOwnerName(OWNER_NAME);
+        BigDecimal accountBalance = secondAccount.getBalance();
+        secondAccount.setBalance(accountBalance.add(BigDecimal.TEN));
 
         Response response = target.path(BankAccountsController.BASE_URL)
                 .request()
@@ -117,7 +120,8 @@ public class BankAccountControllerTest {
 
         BankAccount updatedAccount = bankAccountService.getBankAccountById(BankAccountDto.NIKOLAY_STORONSKY_BANK_ACCOUNT_ID);
 
-        assertThat(BLOCKED_AMOUNT, Matchers.comparesEqualTo(updatedAccount.getBlockedAmount()));
+        assertEquals(OWNER_NAME, updatedAccount.getOwnerName());
+        assertThat(accountBalance, Matchers.comparesEqualTo(updatedAccount.getBalance()));
     }
 
     /**

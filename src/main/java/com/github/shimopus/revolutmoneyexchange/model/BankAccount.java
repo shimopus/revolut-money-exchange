@@ -32,6 +32,11 @@ public class BankAccount implements ModelHasId {
         this.currency = currency;
     }
 
+    public BankAccount(Long id, String ownerName) {
+        this.id = id;
+        this.ownerName = ownerName;
+    }
+
     public Long getId() {
         return id;
     }
