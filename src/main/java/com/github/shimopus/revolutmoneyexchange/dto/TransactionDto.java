@@ -386,11 +386,11 @@ public class TransactionDto {
     }
 
     /**
-     * Verefies the validity of the Trnsaction object to be saved into the database.
+     * Verifies the validity of the Transaction object to be saved into the database.
      *
      * @param transaction Transaction object to be validated
      *
-     * @throws ObjectModificationException in case of some invalid parameters
+     * @throws ObjectModificationException in case of any invalid parameter
      */
     private void verify(Transaction transaction) throws ObjectModificationException {
         if (transaction.getAmount() == null || transaction.getFromBankAccountId() == null ||
